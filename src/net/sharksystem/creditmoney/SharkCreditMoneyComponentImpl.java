@@ -6,7 +6,6 @@ import net.sharksystem.SharkUnknownBehaviourException;
 import net.sharksystem.asap.ASAPMessageReceivedListener;
 import net.sharksystem.asap.ASAPMessages;
 import net.sharksystem.asap.ASAPPeer;
-import net.sharksystem.asap.persons.Person;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -22,32 +21,32 @@ public class SharkCreditMoneyComponentImpl implements
     }
 
     @Override
-    public void createBond(Person creditor, Person debtor, CharSequence unit, int amount) throws SharkCreditMoneyException {
+    public void createBond(CharSequence creditorID, CharSequence debtorID, CharSequence unit, int amount) throws SharkCreditMoneyException {
 
     }
 
     @Override
-    public Collection<SharkCreditBond> getBondsByCreditor(Person creditor) {
+    public Collection<SharkCreditBond> getBondsByCreditor(CharSequence creditorID) {
         return null;
     }
 
     @Override
-    public Collection<SharkCreditBond> getBondsByDebtor(Person debtor) {
+    public Collection<SharkCreditBond> getBondsByDebtor(CharSequence debtorID) {
         return null;
     }
 
     @Override
-    public Collection<SharkCreditBond> getBondsByCreditorAndDebtor(Person creditor, Person debtor) {
+    public Collection<SharkCreditBond> getBondsByCreditorAndDebtor(CharSequence creditorID, CharSequence debtorID) {
         return null;
     }
 
     @Override
-    public void replaceDebtor(SharkCreditBond bond, Person newDebtor) throws SharkCreditMoneyException {
+    public void replaceDebtor(SharkCreditBond bond, CharSequence newDebtor) throws SharkCreditMoneyException {
 
     }
 
     @Override
-    public void replaceCreditor(SharkCreditBond bond, Person newDebtor) throws SharkCreditMoneyException {
+    public void replaceCreditor(SharkCreditBond bond, CharSequence newDebtor) throws SharkCreditMoneyException {
 
     }
 

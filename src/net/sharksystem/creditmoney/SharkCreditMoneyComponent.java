@@ -2,7 +2,6 @@ package net.sharksystem.creditmoney;
 
 import net.sharksystem.ASAPFormats;
 import net.sharksystem.SharkComponent;
-import net.sharksystem.asap.persons.Person;
 
 import java.util.Collection;
 
@@ -140,18 +139,18 @@ public interface SharkCreditMoneyComponent extends SharkComponent {
      * method will not return anything. A listener
      * @throws
      */
-    void createBond(Person creditor, Person debtor, CharSequence unit, int amount)
+    void createBond(CharSequence creditorID, CharSequence debtorID, CharSequence unit, int amount)
             throws SharkCreditMoneyException;
 
-    Collection<SharkCreditBond> getBondsByCreditor(Person creditor);
+    Collection<SharkCreditBond> getBondsByCreditor(CharSequence creditorID);
 
-    Collection<SharkCreditBond> getBondsByDebtor(Person debtor);
+    Collection<SharkCreditBond> getBondsByDebtor(CharSequence debtorID);
 
-    Collection<SharkCreditBond> getBondsByCreditorAndDebtor(Person creditor, Person debtor);
+    Collection<SharkCreditBond> getBondsByCreditorAndDebtor(CharSequence creditorID, CharSequence debtorID);
 
-    void replaceDebtor(SharkCreditBond bond, Person newDebtor) throws SharkCreditMoneyException;
+    void replaceDebtor(SharkCreditBond bond, CharSequence newDebtorID) throws SharkCreditMoneyException;
 
-    void replaceCreditor(SharkCreditBond bond, Person newCreditor) throws SharkCreditMoneyException;
+    void replaceCreditor(SharkCreditBond bond, CharSequence newCreditorID) throws SharkCreditMoneyException;
 
     void subscribeSharkCreditBondReceivedListener(SharkCreditBondReceivedListener listener);
 
