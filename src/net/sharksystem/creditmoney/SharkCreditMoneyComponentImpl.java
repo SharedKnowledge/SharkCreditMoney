@@ -36,6 +36,16 @@ public class SharkCreditMoneyComponentImpl implements SharkCreditMoneyComponent 
     }
 
     @Override
+    public void replaceDebtor(SharkCreditBond bond, Person newDebtor) throws SharkCreditMoneyException {
+
+    }
+
+    @Override
+    public void replaceCreditor(SharkCreditBond bond, Person newDebtor) throws SharkCreditMoneyException {
+
+    }
+
+    @Override
     public void subscribeSharkCreditBondReceivedListener(SharkCreditBondReceivedListener listener) {
 
     }

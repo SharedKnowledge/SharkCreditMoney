@@ -9,6 +9,7 @@ public interface SharkCreditBond {
     Person getDebtor();
 
     boolean signedByDeptor();
+    boolean allowedToChangeDeptor();
 
     /**
      * @return creditor of this bond
@@ -16,6 +17,7 @@ public interface SharkCreditBond {
     Person getCreditor();
 
     boolean signedByCreditor();
+    boolean allowedToChangeCreditor();
 
     /**
      * A bond defines a kind of depth. Each bond can have its own unit, e.g. bar of gold-pressed latinum, a favour,
