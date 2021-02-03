@@ -151,7 +151,7 @@ public interface SharkCreditMoneyComponent extends SharkComponent {
 
     void replaceDebtor(SharkCreditBond bond, Person newDebtor) throws SharkCreditMoneyException;
 
-    void replaceCreditor(SharkCreditBond bond, Person newDebtor) throws SharkCreditMoneyException;
+    void replaceCreditor(SharkCreditBond bond, Person newCreditor) throws SharkCreditMoneyException;
 
     void subscribeSharkCreditBondReceivedListener(SharkCreditBondReceivedListener listener);
 
