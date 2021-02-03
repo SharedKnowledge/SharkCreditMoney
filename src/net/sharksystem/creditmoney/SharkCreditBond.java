@@ -8,8 +8,8 @@ public interface SharkCreditBond {
      */
     Person getDebtor();
 
-    boolean signedByDeptor();
-    boolean allowedToChangeDeptor();
+    boolean signedByDebtor();
+    boolean allowedToChangeDebtor();
 
     /**
      * @return creditor of this bond
