@@ -51,6 +51,11 @@ public class SharkCreditMoneyComponentImpl implements SharkCreditMoneyComponent 
     }
 
     @Override
+    public void annulBond(SharkCreditBond bond) throws SharkCreditMoneyException {
+
+    }
+
+    @Override
     public void onStart(ASAPPeer asapPeer) throws SharkException {
 
     }

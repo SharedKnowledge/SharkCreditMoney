@@ -133,6 +133,7 @@ public interface SharkCreditMoneyComponent extends SharkComponent {
     String SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_DEBTOR_URI = "sharkMoney://signAsDebtor";
     String SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_CREDITOR_URI = "sharkMoney://signAsCreditor";
     String SHARK_CREDIT_MONEY_SIGNED_BOND_URI = "sharkMoney://signedBond";
+    String SHARK_CREDIT_MONEY_ANNUL_BOND_URI = "sharkMoney://annulBond";
 
     /**
      * Create a bond. It is a decentralized system. Bond creation requires interaction of several peers. This
@@ -153,5 +154,7 @@ public interface SharkCreditMoneyComponent extends SharkComponent {
     void replaceCreditor(SharkCreditBond bond, Person newDebtor) throws SharkCreditMoneyException;
 
     void subscribeSharkCreditBondReceivedListener(SharkCreditBondReceivedListener listener);
+
+    void annulBond(SharkCreditBond bond) throws SharkCreditMoneyException;
 
 }
