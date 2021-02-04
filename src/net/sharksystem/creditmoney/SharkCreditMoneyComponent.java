@@ -125,6 +125,26 @@ import java.util.Collection;
  * <br/>
  * A bond ceases to exist after a while. That is an interesting feature. Bonds must be re-established after a while or
  * get lost. Another striking similarity to all paper based currencies ever existed.
+ * <br/>
+ * <br/>
+ * Let's have a deeper look into the transfer process. Assume, Alice ows Bob - lets say, one cent. Both issued and signed
+ * a bond. Alice became debtor and Bob creditor. Now, Bob wants to transfer it role as creditor to Clara. Why?
+ * Maybe, he ows Clara one cent and he find it a good idea to shorten the creditor - debtor - chain. Alice would owe
+ * Clara and Bob is no longer debtor nir creditor. Bob has no reason to refuse this transfer from a pure perspective
+ * of trust. It different from privacy perspective. Bob would reveal to Clara that Alice ows him.
+ * <br/>
+ * <br/>
+ * That's an interesting point and should be underlined: <i>this credit based money system works only within user groups
+ * in which this privacy consideration is not an issue</i>. Assumed this: Bob has no reason to refuse. Alice would also
+ * have no reason to refuse beside privacy considerations. Only Clara could have problems with this transfer. She could
+ * refuse to become creditor if she considers Alice a worse debtor than Bob. This system could need a system to
+ * assess debtor credibility. In this first version, <i>we assume all members of that group as persons with a perfect
+ * credibility</i>.
+ * <br/>
+ * <br/>
+ * Clara has no (more) reasons to refuse Bobs offer to get creditor of Alice instead of him. The argumentation is the
+ * same with change of creditor (with made assumptions). Transfer of debtor or creditor of a bond can be automated.
+ *
  */
 @ASAPFormats(formats = {SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_FORMAT})
 public interface SharkCreditMoneyComponent extends SharkComponent {
@@ -134,9 +154,11 @@ public interface SharkCreditMoneyComponent extends SharkComponent {
     String SHARK_CREDIT_MONEY_SIGNED_BOND_URI = "sharkMoney://signedBond";
     String SHARK_CREDIT_MONEY_ANNUL_BOND_URI = "sharkMoney://annulBond";
 
+    String BEHAVIOUR_ALLOW_CREDITOR_TRANSFER = "SHARK_MONEY_BEHAVIOUR_ALLOW_CREDITOR_TRANSFER";
+
     /**
      * Create a bond. It is a decentralized system. Bond creation requires interaction of several peers. This
-     * method will not return anything. A listener
+     * method will not return anything. A listener is informed about a successfully signed bond.
      * @throws
      */
     void createBond(CharSequence creditorID, CharSequence debtorID, CharSequence unit, int amount)
@@ -148,6 +170,12 @@ public interface SharkCreditMoneyComponent extends SharkComponent {
 
     Collection<SharkCreditBond> getBondsByCreditorAndDebtor(CharSequence creditorID, CharSequence debtorID);
 
+    /**
+     * The former debtor asks to replace it with new one.
+     * @param bond
+     * @param newDebtorID
+     * @throws SharkCreditMoneyException e.g. this peer is not debtor of this bond, missing certificate(s)
+     */
     void replaceDebtor(SharkCreditBond bond, CharSequence newDebtorID) throws SharkCreditMoneyException;
 
     void replaceCreditor(SharkCreditBond bond, CharSequence newCreditorID) throws SharkCreditMoneyException;
