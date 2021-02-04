@@ -154,7 +154,8 @@ public interface SharkCreditMoneyComponent extends SharkComponent {
     String SHARK_CREDIT_MONEY_SIGNED_BOND_URI = "sharkMoney://signedBond";
     String SHARK_CREDIT_MONEY_ANNUL_BOND_URI = "sharkMoney://annulBond";
 
-    String BEHAVIOUR_ALLOW_CREDITOR_TRANSFER = "SHARK_MONEY_BEHAVIOUR_ALLOW_CREDITOR_TRANSFER";
+    /** allow transfer of debtor or creditor - default: yes / true */
+    String BEHAVIOUR_SHARK_MONEY_ALLOW_TRANSFER = "SHARK_MONEY_BEHAVIOUR_ALLOW_TRANSFER";
 
     /**
      * Create a bond. It is a decentralized system. Bond creation requires interaction of several peers. This

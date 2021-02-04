@@ -16,6 +16,8 @@ public class SharkCreditMoneyComponentImpl implements
     private ASAPPeer asapPeer;
     private SharkCreditBondReceivedListener sharkCreditBondReceivedListener;
 
+    private boolean allowTransfer = true;
+
     public SharkCreditMoneyComponentImpl(SharkCertificateComponent certificateComponent) {
         this.certificateComponent = certificateComponent;
     }
@@ -69,8 +71,13 @@ public class SharkCreditMoneyComponentImpl implements
     }
 
     @Override
-    public void setBehaviour(String s, boolean b) throws SharkUnknownBehaviourException {
+    public void setBehaviour(String behaviour, boolean on) throws SharkUnknownBehaviourException {
+        switch (behaviour) {
+            case SharkCreditMoneyComponent.BEHAVIOUR_SHARK_MONEY_ALLOW_TRANSFER:
+                this.allowTransfer = on; break;
 
+            default: throw new SharkUnknownBehaviourException(behaviour);
+        }
     }
 
 
