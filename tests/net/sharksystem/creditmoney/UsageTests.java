@@ -1,6 +1,6 @@
 package net.sharksystem.creditmoney;
 
-import net.sharksystem.SharkTestPeerFS;
+import net.sharksystem.*;
 import org.junit.jupiter.api.Test;
 
 import static net.sharksystem.creditmoney.TestConstants.*;
@@ -10,9 +10,25 @@ public class UsageTests {
     private static final String ALICE_FOLDER = THIS_ROOT_DIRECTORY + ALICE_NAME;
 
     @Test
-    public void test1() {
+    public void test1() throws SharkException {
         // nothing yet
         SharkTestPeerFS.removeFolder(THIS_ROOT_DIRECTORY);
         SharkTestPeerFS aliceSharkPeer = new SharkTestPeerFS(ALICE_ID, ALICE_FOLDER);
+
+        // certificate component required
+        aliceSharkPeer.addComponent(new SharkCertificateComponentFactory(), SharkCertificateComponent.class);
+
+        // get certificate component
+        SharkCertificateComponent certificateComponent =
+                (SharkCertificateComponent) aliceSharkPeer.getComponent(SharkCertificateComponent.class);
+
+        // create money factory ;)
+        SharkCreditMoneyComponentFactory scmcf = new SharkCreditMoneyComponentFactory(certificateComponent);
+
+        // get component
+        SharkCertificateComponent moneyComponent =
+                (SharkCertificateComponent) aliceSharkPeer.getComponent(SharkCertificateComponent.class);
+
+        // add tests
     }
 }
