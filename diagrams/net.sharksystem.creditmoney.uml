@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement />
+  <nodes>
+    <node x="130.0" y="80.0">net.sharksystem.creditmoney.SharkCreditMoneyComponentImpl</node>
+    <node x="0.0" y="155.0">net.sharksystem.creditmoney.SharkCreditMoneyComponentFactory</node>
+    <node x="0.0" y="230.0">net.sharksystem.creditmoney.SharkCreditMoneyException</node>
+    <node x="0.0" y="0.0">net.sharksystem.creditmoney.SharkCreditMoneyComponent</node>
+    <node x="293.0" y="230.0">net.sharksystem.creditmoney.SharkCreditBond</node>
+    <node x="268.0" y="0.0">net.sharksystem.creditmoney.SharkCreditBondReceivedListener</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="net.sharksystem.creditmoney.SharkCreditMoneyComponentImpl" target="net.sharksystem.creditmoney.SharkCreditBondReceivedListener">
+      <point x="70.0" y="-15.0" />
+      <point x="340.0" y="55.0" />
+      <point x="416.0" y="55.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="net.sharksystem.creditmoney.SharkCreditMoneyComponentImpl" target="net.sharksystem.creditmoney.SharkCreditMoneyComponent">
+      <point x="-70.0" y="-15.0" />
+      <point x="200.0" y="55.0" />
+      <point x="124.0" y="55.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="1.0" x="353.0" y="110.0" />
+  <SelectedNodes />
+  <Categories />
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>private</VISIBILITY>
+</Diagram>
+

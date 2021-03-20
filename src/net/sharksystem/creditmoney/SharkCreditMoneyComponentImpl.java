@@ -3,16 +3,19 @@ package net.sharksystem.creditmoney;
 import net.sharksystem.SharkCertificateComponent;
 import net.sharksystem.SharkException;
 import net.sharksystem.SharkUnknownBehaviourException;
+import net.sharksystem.asap.ASAPException;
 import net.sharksystem.asap.ASAPMessageReceivedListener;
 import net.sharksystem.asap.ASAPMessages;
 import net.sharksystem.asap.ASAPPeer;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Collection;
 
 public class SharkCreditMoneyComponentImpl implements
         SharkCreditMoneyComponent, SharkCreditBondReceivedListener, ASAPMessageReceivedListener {
     private final SharkCertificateComponent certificateComponent;
+    private static CharSequence DefaultURI = "sn2//all";
     private ASAPPeer asapPeer;
     private SharkCreditBondReceivedListener sharkCreditBondReceivedListener;
 
@@ -24,11 +27,13 @@ public class SharkCreditMoneyComponentImpl implements
 
     @Override
     public void createBond(CharSequence creditorID, CharSequence debtorID, CharSequence unit, int amount) throws SharkCreditMoneyException {
-
+        //this.asapPeer.sendASAPMessage(SHARK_CREDIT_MONEY_FORMAT, DefaultURI, new InMemoSharkCreditBond());
     }
 
     @Override
     public Collection<SharkCreditBond> getBondsByCreditor(CharSequence creditorID) {
+
+
         return null;
     }
 
@@ -85,6 +90,12 @@ public class SharkCreditMoneyComponentImpl implements
     public void asapMessagesReceived(ASAPMessages asapMessages) throws IOException {
         SharkCreditBond bond = null;
         // TODO: deserialize Bond.
+
+        try {
+            ByteArrayInputStream bais = new ByteArrayInputStream(asapMessages.getMessage(0, true));
+        } catch (ASAPException e) {
+            e.printStackTrace();
+        }
 
         this.sharkCreditBondReceivedListener.sharkCreditBondReceived(bond, asapMessages.getURI());
     }
