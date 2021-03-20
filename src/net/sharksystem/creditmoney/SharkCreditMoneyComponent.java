@@ -22,7 +22,7 @@ import java.util.Collection;
  * <br/>
  * Here is the problem: ALice cannot falsify another banknote. She has not got <i>banks</i> private key and cannot sign
  * on its behalf. But she does not has to. She can make copies. She can give one to Bob, another to Clara and so forth.
- * Solve this double spending problem and you have a digitial currency. There are two well-known approaches:
+ * Solve this double spending problem and you have a digital currency. There are two well-known approaches:
  * <br/>
  * <ul>
  *     <li><b>centralized systems:</b> The <i>bank</i> keeps always track on the ownership of their banknotes.
@@ -55,7 +55,7 @@ import java.util.Collection;
  * Groups can be as huge as you like. Users have to exchange digital certificates (we use
  * <a href="https://github.com/SharedKnowledge/ASAPCertificateExchange/wiki">SharkCertificateExchange</a> in this library).
  * It works without a central <i>bank</i> but also without a P2P system like blockchain. It requires nothing but a
- * digitial device but not even Internet access.
+ * digital device but not even Internet access.
  * <br/>
  * <br/>
  * At first, there are just two parties involved. A <b>debtor</b> and a <b>creditor</b> sign a <b>bond</b>. This bond
