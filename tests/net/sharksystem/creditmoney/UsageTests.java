@@ -2,6 +2,7 @@ package net.sharksystem.creditmoney;
 
 import net.sharksystem.*;
 import org.junit.jupiter.api.Test;
+import net.sharksystem.asap.crypto.ASAPCryptoAlgorithms;
 
 import static net.sharksystem.creditmoney.TestConstants.*;
 
@@ -25,10 +26,14 @@ public class UsageTests {
         // create money factory ;)
         SharkCreditMoneyComponentFactory scmcf = new SharkCreditMoneyComponentFactory(certificateComponent);
 
+        // shark money component required
+        aliceSharkPeer.addComponent(scmcf, SharkCreditMoneyComponent.class);
+
         // get component
         SharkCertificateComponent moneyComponent =
                 (SharkCertificateComponent) aliceSharkPeer.getComponent(SharkCertificateComponent.class);
 
+        //ASAPCryptoAlgorithms.sign("jdds".getBytes(), aliceSharkPeer);
         // add tests
     }
 }
