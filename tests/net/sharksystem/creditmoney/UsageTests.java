@@ -29,11 +29,6 @@ public class UsageTests {
         // shark money component required
         aliceSharkPeer.addComponent(scmcf, SharkCreditMoneyComponent.class);
 
-        // get component
-        SharkCertificateComponent moneyComponent =
-                (SharkCertificateComponent) aliceSharkPeer.getComponent(SharkCertificateComponent.class);
-
-        //ASAPCryptoAlgorithms.sign("jdds".getBytes(), aliceSharkPeer);
         // add tests
     }
 }

@@ -4,11 +4,15 @@ import net.sharksystem.asap.ASAPSecurityException;
 import net.sharksystem.asap.crypto.ASAPCryptoAlgorithms;
 import net.sharksystem.asap.crypto.ASAPKeyStore;
 import net.sharksystem.asap.persons.Person;
+import net.sharksystem.asap.utils.ASAPSerialization;
 
 import java.io.*;
+import java.sql.Timestamp;
 import java.util.Calendar;
+import java.util.HashSet;
+import java.util.Set;
 
-public class InMemoSharkCreditBond implements SharkCreditBond {
+public class InMemoSharkCreditBond implements SharkCreditBond, Serializable {
 
     /**
      * This constant is used to set the bond's expirationDate
@@ -189,6 +193,22 @@ public class InMemoSharkCreditBond implements SharkCreditBond {
             out.writeObject(creditBond);
             out.flush();
             serializedCreditBond = bos.toByteArray();
+            ///// content
+            ASAPSerialization.writeByteArray(serializedCreditBond, bos);
+            ///// sender
+            ASAPSerialization.writeCharSequenceParameter(creditBond.creditor.getUUID(), bos);
+            ///// recipients
+            Set<CharSequence> recipients = new HashSet<>();
+            recipients.add(creditBond.debtor.getUUID());
+            ASAPSerialization.writeCharSequenceSetParameter(recipients, bos);
+            ///// timestamp
+            Timestamp creationTime = new Timestamp(System.currentTimeMillis());
+            String timestampString = creationTime.toString();
+            ASAPSerialization.writeCharSequenceParameter(timestampString, bos);
+
+            serializedCreditBond = bos.toByteArray();
+
+
         } catch (IOException e) {
             e.printStackTrace();
         } finally {

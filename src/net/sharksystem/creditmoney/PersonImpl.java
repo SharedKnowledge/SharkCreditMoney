@@ -2,7 +2,9 @@ package net.sharksystem.creditmoney;
 
 import net.sharksystem.asap.persons.Person;
 
-public class PersonImpl implements Person {
+import java.io.Serializable;
+
+public class PersonImpl implements Person, Serializable {
     private final CharSequence personID;
     private CharSequence displayName;
 

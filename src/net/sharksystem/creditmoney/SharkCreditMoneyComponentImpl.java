@@ -145,7 +145,6 @@ public class SharkCreditMoneyComponentImpl implements
         }
     }
 
-
     @Override
     public void asapMessagesReceived(ASAPMessages asapMessages) throws IOException {
         SharkCreditBond bond = null;
