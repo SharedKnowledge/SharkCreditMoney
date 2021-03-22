@@ -2,6 +2,8 @@ package net.sharksystem.creditmoney;
 
 import net.sharksystem.ASAPFormats;
 import net.sharksystem.SharkComponent;
+import net.sharksystem.asap.ASAPException;
+import net.sharksystem.asap.ASAPSecurityException;
 
 import java.util.Collection;
 
@@ -163,13 +165,13 @@ public interface SharkCreditMoneyComponent extends SharkComponent {
      * @throws
      */
     void createBond(CharSequence creditorID, CharSequence debtorID, CharSequence unit, int amount)
-            throws SharkCreditMoneyException;
+            throws SharkCreditMoneyException, ASAPException;
 
-    Collection<SharkCreditBond> getBondsByCreditor(CharSequence creditorID);
+    Collection<SharkCreditBond> getBondsByCreditor(CharSequence creditorID) throws SharkCreditMoneyException;
 
-    Collection<SharkCreditBond> getBondsByDebtor(CharSequence debtorID);
+    Collection<SharkCreditBond> getBondsByDebtor(CharSequence debtorID) throws SharkCreditMoneyException;
 
-    Collection<SharkCreditBond> getBondsByCreditorAndDebtor(CharSequence creditorID, CharSequence debtorID);
+    Collection<SharkCreditBond> getBondsByCreditorAndDebtor(CharSequence creditorID, CharSequence debtorID) throws SharkCreditMoneyException;
 
     /**
      * The former debtor asks to replace it with new one.
@@ -177,12 +179,11 @@ public interface SharkCreditMoneyComponent extends SharkComponent {
      * @param newDebtorID
      * @throws SharkCreditMoneyException e.g. this peer is not debtor of this bond, missing certificate(s)
      */
-    void replaceDebtor(SharkCreditBond bond, CharSequence newDebtorID) throws SharkCreditMoneyException;
+    void replaceDebtor(SharkCreditBond bond, CharSequence newDebtorID) throws SharkCreditMoneyException, ASAPException;
 
-    void replaceCreditor(SharkCreditBond bond, CharSequence newCreditorID) throws SharkCreditMoneyException;
+    void replaceCreditor(SharkCreditBond bond, CharSequence newCreditorID) throws SharkCreditMoneyException, ASAPException;
 
     void subscribeSharkCreditBondReceivedListener(SharkCreditBondReceivedListener listener);
 
-    void annulBond(SharkCreditBond bond) throws SharkCreditMoneyException;
-
+    void annulBond(SharkCreditBond bond) throws SharkCreditMoneyException, ASAPException;
 }
