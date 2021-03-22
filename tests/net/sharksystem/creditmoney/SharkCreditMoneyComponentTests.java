@@ -1,14 +1,19 @@
 package net.sharksystem.creditmoney;
 
-import net.sharksystem.*;
+import net.sharksystem.SharkCertificateComponent;
+import net.sharksystem.SharkCertificateComponentFactory;
+import net.sharksystem.SharkException;
+import net.sharksystem.SharkTestPeerFS;
 import org.junit.jupiter.api.Test;
-import net.sharksystem.asap.crypto.ASAPCryptoAlgorithms;
 
 import static net.sharksystem.creditmoney.TestConstants.*;
 
-public class UsageTests {
+public class SharkCreditMoneyComponentTests {
     private static final String THIS_ROOT_DIRECTORY = TestConstants.ROOT_DIRECTORY + UsageTests.class.getSimpleName() + "/";
     private static final String ALICE_FOLDER = THIS_ROOT_DIRECTORY + ALICE_NAME;
+    public static final String BOB_FOLDER = THIS_ROOT_DIRECTORY + BOB_NAME;
+    public static final String CLARA_FOLDER = THIS_ROOT_DIRECTORY + CLARA_NAME;
+    public static final String DAVID_FOLDER = THIS_ROOT_DIRECTORY + DAVID_NAME;
 
     @Test
     public void test1() throws SharkException {

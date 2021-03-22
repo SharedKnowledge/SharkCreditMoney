@@ -125,7 +125,6 @@ public class SharkCreditMoneyComponentImpl implements
     public void annulBond(SharkCreditBond bond) throws SharkCreditMoneyException, ASAPException {
         InMemoSharkCreditBond creditBond = (InMemoSharkCreditBond) bond;
         creditBond.annulBond();
-        creditBond.signBondAsCreditor(this.certificateComponent);
         this.asapPeer.sendASAPMessage(SHARK_CREDIT_MONEY_FORMAT, SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_CREDITOR_URI, InMemoSharkCreditBond.serializeCreditBond(creditBond));
     }
 
@@ -157,7 +156,11 @@ public class SharkCreditMoneyComponentImpl implements
             e.printStackTrace();
         }
 
-        this.sharkCreditBondReceivedListener.sharkCreditBondReceived(bond, asapMessages.getURI());
+        try {
+            this.sharkCreditBondReceivedListener.sharkCreditBondReceived(bond, asapMessages.getURI());
+        } catch (ASAPException e) {
+            e.printStackTrace();
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -165,12 +168,24 @@ public class SharkCreditMoneyComponentImpl implements
     //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     @Override
-    public void sharkCreditBondReceived(SharkCreditBond bond, CharSequence uri) {
+    public void sharkCreditBondReceived(SharkCreditBond bond, CharSequence uri) throws ASAPException {
+        InMemoSharkCreditBond creditBond = (InMemoSharkCreditBond) bond;
         switch(uri.toString()) {
-            case SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_CREDITOR_URI: /* TODO */ break;
-            case SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_DEBTOR_URI: /* TODO */ break;
-            case SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_SIGNED_BOND_URI: /* TODO */ break;
-            case SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_ANNUL_BOND_URI: /* TODO */ break;
+            case SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_CREDITOR_URI:
+                creditBond.signBondAsCreditor(this.certificateComponent);
+                this.asapPeer.sendASAPMessage(SHARK_CREDIT_MONEY_FORMAT, SHARK_CREDIT_MONEY_SIGNED_BOND_URI, InMemoSharkCreditBond.serializeCreditBond(creditBond));
+                break;
+            case SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_DEBTOR_URI:
+                creditBond.signBondAsDebtor(this.certificateComponent);
+                this.asapPeer.sendASAPMessage(SHARK_CREDIT_MONEY_FORMAT, SHARK_CREDIT_MONEY_SIGNED_BOND_URI, InMemoSharkCreditBond.serializeCreditBond(creditBond));
+                break;
+            case SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_SIGNED_BOND_URI:
+                
+                /* TODO */
+                break;
+            case SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_ANNUL_BOND_URI:
+                /* TODO */
+                break;
             default: // unknown URI
         }
     }
