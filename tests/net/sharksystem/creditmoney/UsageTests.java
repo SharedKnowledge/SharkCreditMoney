@@ -36,4 +36,7 @@ public class UsageTests {
         //ASAPCryptoAlgorithms.sign("jdds".getBytes(), aliceSharkPeer);
         // add tests
     }
+
+    @Test
+    public void
 }
