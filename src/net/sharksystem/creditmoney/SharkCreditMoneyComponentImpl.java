@@ -180,7 +180,7 @@ public class SharkCreditMoneyComponentImpl implements
                 this.asapPeer.sendASAPMessage(SHARK_CREDIT_MONEY_FORMAT, SHARK_CREDIT_MONEY_SIGNED_BOND_URI, InMemoSharkCreditBond.serializeCreditBond(creditBond));
                 break;
             case SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_SIGNED_BOND_URI:
-                
+
                 /* TODO */
                 break;
             case SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_ANNUL_BOND_URI:
