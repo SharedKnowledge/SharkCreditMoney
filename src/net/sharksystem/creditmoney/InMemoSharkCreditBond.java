@@ -5,6 +5,7 @@ import net.sharksystem.asap.crypto.ASAPCryptoAlgorithms;
 import net.sharksystem.asap.crypto.ASAPKeyStore;
 import net.sharksystem.asap.persons.Person;
 
+import java.io.*;
 import java.util.Calendar;
 
 public class InMemoSharkCreditBond implements SharkCreditBond {
@@ -154,6 +155,10 @@ public class InMemoSharkCreditBond implements SharkCreditBond {
         this.setExpirationDate(this.expirationDate);
     }
 
+    public void annulBond() {
+        this.setBondAsExpired();
+    }
+
     public void signBondAsCreditor(ASAPKeyStore ASAPKeyStore) throws ASAPSecurityException {
         this.creditorSignature = ASAPCryptoAlgorithms.sign(this.toString().getBytes(), ASAPKeyStore);
     }
@@ -170,7 +175,55 @@ public class InMemoSharkCreditBond implements SharkCreditBond {
                 ", unitDescription=" + unitDescription +
                 ", amount=" + amount +
                 ", expirationDate=" + expirationDate +
+                ", creditorSignature=" + creditorSignature +
+                ", debtorSignature=" + debtorSignature +
                 '}';
+    }
+
+    public static byte [] serializeCreditBond(InMemoSharkCreditBond creditBond) {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutputStream out = null;
+        byte[] serializedCreditBond = null;
+        try {
+            out = new ObjectOutputStream(bos);
+            out.writeObject(creditBond);
+            out.flush();
+            serializedCreditBond = bos.toByteArray();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                bos.close();
+            } catch (IOException ex) {
+                // ignore close exception
+                serializedCreditBond = null;
+            }
+        }
+
+        return serializedCreditBond;
+    }
+
+    public static InMemoSharkCreditBond deserializeCreditBond(byte[] serializedCreditBond) throws IOException {
+        ByteArrayInputStream bis = new ByteArrayInputStream(serializedCreditBond);
+        ObjectInput in = null;
+        InMemoSharkCreditBond creditBond = null;
+        try {
+            in = new ObjectInputStream(bis);
+            creditBond = (InMemoSharkCreditBond) in.readObject();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (in != null) {
+                    in.close();
+                }
+            } catch (IOException ex) {
+                // ignore close exception
+                creditBond = null;
+            }
+        }
+
+        return creditBond;
     }
 
     private void setExpirationDate() {
@@ -182,6 +235,11 @@ public class InMemoSharkCreditBond implements SharkCreditBond {
         Calendar until = Calendar.getInstance();
         until.setTimeInMillis(creationDate);
         until.add(Calendar.YEAR, DEFAULT_CREDIT_BOND_VALIDITY_IN_YEARS);
+        this.expirationDate = until.getTimeInMillis();
+    }
+
+    private void setBondAsExpired() {
+        Calendar until = Calendar.getInstance();
         this.expirationDate = until.getTimeInMillis();
     }
 

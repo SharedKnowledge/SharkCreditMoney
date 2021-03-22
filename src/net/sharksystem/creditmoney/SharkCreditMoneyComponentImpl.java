@@ -3,19 +3,16 @@ package net.sharksystem.creditmoney;
 import net.sharksystem.SharkCertificateComponent;
 import net.sharksystem.SharkException;
 import net.sharksystem.SharkUnknownBehaviourException;
-import net.sharksystem.asap.ASAPException;
-import net.sharksystem.asap.ASAPMessageReceivedListener;
-import net.sharksystem.asap.ASAPMessages;
-import net.sharksystem.asap.ASAPPeer;
+import net.sharksystem.asap.*;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 
 public class SharkCreditMoneyComponentImpl implements
         SharkCreditMoneyComponent, SharkCreditBondReceivedListener, ASAPMessageReceivedListener {
     private final SharkCertificateComponent certificateComponent;
-    private static CharSequence DefaultURI = "sn2//all";
     private ASAPPeer asapPeer;
     private SharkCreditBondReceivedListener sharkCreditBondReceivedListener;
 
@@ -26,35 +23,96 @@ public class SharkCreditMoneyComponentImpl implements
     }
 
     @Override
-    public void createBond(CharSequence creditorID, CharSequence debtorID, CharSequence unit, int amount) throws SharkCreditMoneyException {
-        //this.asapPeer.sendASAPMessage(SHARK_CREDIT_MONEY_FORMAT, DefaultURI, new InMemoSharkCreditBond());
+    public void createBond(CharSequence creditorID, CharSequence debtorID, CharSequence unit, int amount) throws SharkCreditMoneyException, ASAPException {
+        // Create creditBond and ask to sign by debtor
+        InMemoSharkCreditBond creditBond = new InMemoSharkCreditBond(creditorID, debtorID, unit, amount, allowTransfer);
+        creditBond.signBondAsCreditor(this.certificateComponent);
+        this.asapPeer.sendASAPMessage(SHARK_CREDIT_MONEY_FORMAT, SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_DEBTOR_URI, InMemoSharkCreditBond.serializeCreditBond(creditBond));
     }
 
     @Override
-    public Collection<SharkCreditBond> getBondsByCreditor(CharSequence creditorID) {
+    public Collection<SharkCreditBond> getBondsByCreditor(CharSequence creditorID) throws SharkCreditMoneyException {
+        try {
+            ASAPStorage asapStorage =
+                    this.asapPeer.getASAPStorage(SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_FORMAT);
 
-
-        return null;
+            ASAPMessages asapMessages = asapStorage.getChannel(SHARK_CREDIT_MONEY_SIGNED_BOND_URI).getMessages();
+            Collection<SharkCreditBond> bonds = new ArrayList<>();
+            Iterator<byte[]> bondIterator = asapMessages.getMessages();
+            while (bondIterator.hasNext()) {
+                byte[] serializedBond = bondIterator.next();
+                InMemoSharkCreditBond creditBond = InMemoSharkCreditBond.deserializeCreditBond(serializedBond);
+                if (creditBond.getCreditor().getUUID().equals(creditorID)) {
+                    bonds.add(creditBond);
+                }
+            }
+            return bonds;
+        }
+        catch(ASAPException | IOException asapException) {
+            throw new SharkCreditMoneyException(asapException);
+        }
     }
 
     @Override
-    public Collection<SharkCreditBond> getBondsByDebtor(CharSequence debtorID) {
-        return null;
+    public Collection<SharkCreditBond> getBondsByDebtor(CharSequence debtorID) throws SharkCreditMoneyException {
+        try {
+            ASAPStorage asapStorage =
+                    this.asapPeer.getASAPStorage(SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_FORMAT);
+
+            ASAPMessages asapMessages = asapStorage.getChannel(SHARK_CREDIT_MONEY_SIGNED_BOND_URI).getMessages();
+            Collection<SharkCreditBond> bonds = new ArrayList<>();
+            Iterator<byte[]> bondIterator = asapMessages.getMessages();
+            while (bondIterator.hasNext()) {
+                byte[] serializedBond = bondIterator.next();
+                InMemoSharkCreditBond creditBond = InMemoSharkCreditBond.deserializeCreditBond(serializedBond);
+                if (creditBond.getDebtor().getUUID().equals(debtorID)) {
+                    bonds.add(creditBond);
+                }
+            }
+            return bonds;
+        }
+        catch(ASAPException | IOException asapException) {
+            throw new SharkCreditMoneyException(asapException);
+        }
     }
 
     @Override
-    public Collection<SharkCreditBond> getBondsByCreditorAndDebtor(CharSequence creditorID, CharSequence debtorID) {
-        return null;
+    public Collection<SharkCreditBond> getBondsByCreditorAndDebtor(CharSequence creditorID, CharSequence debtorID) throws SharkCreditMoneyException {
+        try {
+            ASAPStorage asapStorage =
+                    this.asapPeer.getASAPStorage(SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_FORMAT);
+
+            ASAPMessages asapMessages = asapStorage.getChannel(SHARK_CREDIT_MONEY_SIGNED_BOND_URI).getMessages();
+            Collection<SharkCreditBond> bonds = new ArrayList<>();
+            Iterator<byte[]> bondIterator = asapMessages.getMessages();
+            while (bondIterator.hasNext()) {
+                byte[] serializedBond = bondIterator.next();
+                InMemoSharkCreditBond creditBond = InMemoSharkCreditBond.deserializeCreditBond(serializedBond);
+                if (creditBond.getCreditor().getUUID().equals(creditorID) && creditBond.getDebtor().getUUID().equals(debtorID)) {
+                    bonds.add(creditBond);
+                }
+            }
+            return bonds;
+        }
+        catch(ASAPException | IOException asapException) {
+            throw new SharkCreditMoneyException(asapException);
+        }
     }
 
     @Override
-    public void replaceDebtor(SharkCreditBond bond, CharSequence newDebtor) throws SharkCreditMoneyException {
-
+    public void replaceDebtor(SharkCreditBond bond, CharSequence newDebtor) throws SharkCreditMoneyException, ASAPException {
+        InMemoSharkCreditBond creditBond = (InMemoSharkCreditBond) bond;
+        creditBond.setDebtor(new PersonImpl(newDebtor));
+        creditBond.signBondAsDebtor(this.certificateComponent);
+        this.asapPeer.sendASAPMessage(SHARK_CREDIT_MONEY_FORMAT, SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_CREDITOR_URI, InMemoSharkCreditBond.serializeCreditBond(creditBond));
     }
 
     @Override
-    public void replaceCreditor(SharkCreditBond bond, CharSequence newDebtor) throws SharkCreditMoneyException {
-
+    public void replaceCreditor(SharkCreditBond bond, CharSequence newCreditor) throws SharkCreditMoneyException, ASAPException {
+        InMemoSharkCreditBond creditBond = (InMemoSharkCreditBond) bond;
+        creditBond.setCreditor(new PersonImpl(newCreditor));
+        creditBond.signBondAsCreditor(this.certificateComponent);
+        this.asapPeer.sendASAPMessage(SHARK_CREDIT_MONEY_FORMAT, SHARK_CREDIT_MONEY_ANNUL_BOND_URI, InMemoSharkCreditBond.serializeCreditBond(creditBond));
     }
 
     @Override
@@ -64,8 +122,11 @@ public class SharkCreditMoneyComponentImpl implements
     }
 
     @Override
-    public void annulBond(SharkCreditBond bond) throws SharkCreditMoneyException {
-
+    public void annulBond(SharkCreditBond bond) throws SharkCreditMoneyException, ASAPException {
+        InMemoSharkCreditBond creditBond = (InMemoSharkCreditBond) bond;
+        creditBond.annulBond();
+        creditBond.signBondAsCreditor(this.certificateComponent);
+        this.asapPeer.sendASAPMessage(SHARK_CREDIT_MONEY_FORMAT, SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_CREDITOR_URI, InMemoSharkCreditBond.serializeCreditBond(creditBond));
     }
 
     @Override
@@ -89,10 +150,9 @@ public class SharkCreditMoneyComponentImpl implements
     @Override
     public void asapMessagesReceived(ASAPMessages asapMessages) throws IOException {
         SharkCreditBond bond = null;
-        // TODO: deserialize Bond.
 
         try {
-            ByteArrayInputStream bais = new ByteArrayInputStream(asapMessages.getMessage(0, true));
+            bond = InMemoSharkCreditBond.deserializeCreditBond(asapMessages.getMessage(0, true));
         } catch (ASAPException e) {
             e.printStackTrace();
         }
