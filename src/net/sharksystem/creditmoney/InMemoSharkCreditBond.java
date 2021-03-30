@@ -1,5 +1,6 @@
 package net.sharksystem.creditmoney;
 
+import net.sharksystem.asap.ASAPException;
 import net.sharksystem.asap.ASAPSecurityException;
 import net.sharksystem.asap.crypto.ASAPCryptoAlgorithms;
 import net.sharksystem.asap.crypto.ASAPKeyStore;
@@ -196,19 +197,17 @@ public class InMemoSharkCreditBond implements SharkCreditBond, Serializable {
             ///// content
             ASAPSerialization.writeByteArray(serializedCreditBond, bos);
             ///// sender
-            ASAPSerialization.writeCharSequenceParameter(creditBond.creditor.getUUID(), bos);
+            // ASAPSerialization.writeCharSequenceParameter(creditBond.creditor.getUUID(), bos);
             ///// recipients
-            Set<CharSequence> recipients = new HashSet<>();
-            recipients.add(creditBond.debtor.getUUID());
-            ASAPSerialization.writeCharSequenceSetParameter(recipients, bos);
+            // Set<CharSequence> recipients = new HashSet<>();
+            // recipients.add(creditBond.debtor.getUUID());
+            // ASAPSerialization.writeCharSequenceSetParameter(recipients, bos);
             ///// timestamp
-            Timestamp creationTime = new Timestamp(System.currentTimeMillis());
-            String timestampString = creationTime.toString();
-            ASAPSerialization.writeCharSequenceParameter(timestampString, bos);
+            // Timestamp creationTime = new Timestamp(System.currentTimeMillis());
+            // String timestampString = creationTime.toString();
+            // ASAPSerialization.writeCharSequenceParameter(timestampString, bos);
 
             serializedCreditBond = bos.toByteArray();
-
-
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -228,6 +227,15 @@ public class InMemoSharkCreditBond implements SharkCreditBond, Serializable {
         ObjectInput in = null;
         InMemoSharkCreditBond creditBond = null;
         try {
+            ////// content
+            // byte[] snMessage = ASAPSerialization.readByteArray(bis);
+            ////// sender
+            // String snSender = ASAPSerialization.readCharSequenceParameter(bis);
+            ////// recipients
+            // Set<CharSequence> snReceivers = ASAPSerialization.readCharSequenceSetParameter(bis);
+            ///// timestamp
+            // String timestampString = ASAPSerialization.readCharSequenceParameter(bis);
+            // Timestamp creationTime = Timestamp.valueOf(timestampString);
             in = new ObjectInputStream(bis);
             creditBond = (InMemoSharkCreditBond) in.readObject();
         } catch (ClassNotFoundException e) {

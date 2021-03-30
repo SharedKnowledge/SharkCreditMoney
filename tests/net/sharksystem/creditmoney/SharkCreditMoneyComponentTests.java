@@ -2,6 +2,7 @@ package net.sharksystem.creditmoney;
 
 import net.sharksystem.*;
 import net.sharksystem.asap.ASAPException;
+import net.sharksystem.asap.apps.testsupport.ASAPTestPeerFS;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -42,6 +43,7 @@ public class SharkCreditMoneyComponentTests {
         SharkTestPeerFS.removeFolder(THIS_ROOT_DIRECTORY);
 
         // Setup alice peer
+        SharkTestPeerFS.removeFolder(ALICE_FOLDER);
         SharkTestPeerFS aliceSharkPeer = new SharkTestPeerFS(ALICE_ID, ALICE_FOLDER);
         SharkCreditMoneyComponent aliceComponent = this.setupComponent(aliceSharkPeer);
 
@@ -59,14 +61,21 @@ public class SharkCreditMoneyComponentTests {
         // Start bob peer
         bobSharkPeer.start();
 
-        // Create, sign and send bond to bob
-        aliceComponent.createBond(ALICE_ID, BOB_ID, "EURO", 20);
+        // Set bob component behavior
+        bobComponent.setBehaviour(SharkCreditMoneyComponent.BEHAVIOUR_SHARK_MONEY_ALLOW_TRANSFER, true);
 
+        // Open connection socket
         aliceSharkPeer.getASAPTestPeerFS().startEncounter(7777, bobSharkPeer.getASAPTestPeerFS());
 
         // give them moment to exchange data
         Thread.sleep(1000);
-        //Thread.sleep(Long.MAX_VALUE);
+        System.out.println("slept a moment");
+
+        // Create, sign and send bond to bob
+        aliceComponent.createBond(ALICE_ID, BOB_ID, "EURO", 20);
+
+        // give them moment to exchange data
+        Thread.sleep(1000);
         System.out.println("slept a moment");
 
         // Bob must have a credit bond from Alice - he issued it by himself

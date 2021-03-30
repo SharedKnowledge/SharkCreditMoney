@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 
-public class SharkCreditMoneyComponentImpl implements
+public class SharkCreditMoneyComponentImpl extends SharkCreditBondReceivedListenerManager implements
         SharkCreditMoneyComponent, SharkCreditBondReceivedListener, ASAPMessageReceivedListener {
     private final SharkCertificateComponent certificateComponent;
     private ASAPPeer asapPeer;
@@ -23,7 +23,7 @@ public class SharkCreditMoneyComponentImpl implements
     }
 
     @Override
-    public void createBond(CharSequence creditorID, CharSequence debtorID, CharSequence unit, int amount) throws SharkCreditMoneyException, ASAPException {
+    public void createBond(CharSequence creditorID, CharSequence debtorID, CharSequence unit, int amount) throws ASAPException {
         // Create creditBond and ask to sign by debtor
         InMemoSharkCreditBond creditBond = new InMemoSharkCreditBond(creditorID, debtorID, unit, amount, allowTransfer);
         creditBond.signBondAsCreditor(this.certificateComponent);
@@ -149,16 +149,27 @@ public class SharkCreditMoneyComponentImpl implements
     public void asapMessagesReceived(ASAPMessages asapMessages) throws IOException {
         SharkCreditBond bond = null;
 
+        ASAPStorage asapStorage = null;
+        ASAPChunkStorage chunkStorage = null;
         try {
-            bond = InMemoSharkCreditBond.deserializeCreditBond(asapMessages.getMessage(0, true));
+            asapStorage = this.asapPeer.getASAPStorage(SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_FORMAT);
+            chunkStorage = asapStorage.getChunkStorage();
         } catch (ASAPException e) {
             e.printStackTrace();
         }
 
-        try {
-            this.sharkCreditBondReceivedListener.sharkCreditBondReceived(bond, asapMessages.getURI());
-        } catch (ASAPException e) {
-            e.printStackTrace();
+        if (asapMessages != null) {
+            try {
+                int era = asapStorage.getEra(); // current era
+                ASAPChunk asapChunk = chunkStorage.getChunk(asapMessages.getURI(), era);
+                int numberMsg = asapChunk.getNumberMessage(); // how many are there?
+                if (numberMsg > 0) {
+                    bond = InMemoSharkCreditBond.deserializeCreditBond(asapMessages.getMessage(0, true));
+                    this.sharkCreditBondReceivedListener.sharkCreditBondReceived(bond, asapMessages.getURI());
+                }
+            } catch (ASAPException e) {
+                e.printStackTrace();
+            }
         }
     }
 
