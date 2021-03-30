@@ -34,8 +34,7 @@ public class SharkCreditMoneyComponentImpl extends SharkCreditBondReceivedListen
     }
 
     @Override
-    public void createChannel(CharSequence uri/*, CharSequence name*/)
-            throws IOException, SharkCreditMoneyException {
+    public void createChannel(CharSequence uri/*, CharSequence name*/) throws IOException, SharkCreditMoneyException {
 
         try {
             ASAPStorage asapStorage =
@@ -158,6 +157,7 @@ public class SharkCreditMoneyComponentImpl extends SharkCreditBondReceivedListen
                 SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_FORMAT, this);
 
         // Create channels
+        /*
         try {
             this.createChannel(SHARK_CREDIT_MONEY_SIGNED_BOND_URI);
             this.createChannel(SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_CREDITOR_URI);
@@ -166,6 +166,7 @@ public class SharkCreditMoneyComponentImpl extends SharkCreditBondReceivedListen
         } catch (IOException e) {
             e.printStackTrace();
         }
+        */
     }
 
     @Override
@@ -233,12 +234,14 @@ public class SharkCreditMoneyComponentImpl extends SharkCreditBondReceivedListen
         }
     }
 
-    public boolean isCreditorSignatureCorrect(SharkCreditBond CreditBond, ASAPKeyStore ASAPKeyStore) throws ASAPSecurityException {
-        return  this.isSignatureCorrect(CreditBond.getCreditor().getUUID().toString(), this.toString().getBytes(), CreditBond.getCreditorSignature(), ASAPKeyStore);
+    @Override
+    public boolean isCreditorSignatureCorrect(SharkCreditBond creditBond, ASAPKeyStore ASAPKeyStore) throws ASAPSecurityException {
+        return  this.isSignatureCorrect(creditBond.getCreditor().getUUID().toString(), creditBond.toString().getBytes(), creditBond.getCreditorSignature(), ASAPKeyStore);
     }
 
+    @Override
     public boolean isDebtorSignatureCorrect(SharkCreditBond CreditBond, ASAPKeyStore ASAPKeyStore) throws ASAPSecurityException {
-        return  this.isSignatureCorrect(CreditBond.getDebtor().getUUID().toString(), this.toString().getBytes(), CreditBond.getDebtorSignature(), ASAPKeyStore);
+        return  this.isSignatureCorrect(CreditBond.getDebtor().getUUID().toString(), CreditBond.toString().getBytes(), CreditBond.getDebtorSignature(), ASAPKeyStore);
     }
 
     @Override

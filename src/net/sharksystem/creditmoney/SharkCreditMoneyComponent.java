@@ -192,5 +192,9 @@ public interface SharkCreditMoneyComponent extends SharkComponent {
 
     void annulBond(SharkCreditBond bond) throws SharkCreditMoneyException, ASAPException;
 
+    boolean isCreditorSignatureCorrect(SharkCreditBond CreditBond, ASAPKeyStore ASAPKeyStore) throws ASAPSecurityException;
+
+    boolean isDebtorSignatureCorrect(SharkCreditBond CreditBond, ASAPKeyStore ASAPKeyStore) throws ASAPSecurityException;
+
     byte[] signBond(ASAPKeyStore ASAPKeyStore, SharkCreditBond Bond) throws ASAPSecurityException;
 }

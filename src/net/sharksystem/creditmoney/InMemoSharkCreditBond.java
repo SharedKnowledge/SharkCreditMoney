@@ -2,12 +2,8 @@ package net.sharksystem.creditmoney;
 
 import net.sharksystem.asap.persons.Person;
 import net.sharksystem.asap.utils.ASAPSerialization;
-
 import java.io.*;
-import java.sql.Timestamp;
 import java.util.Calendar;
-import java.util.HashSet;
-import java.util.Set;
 
 public class InMemoSharkCreditBond implements SharkCreditBond, Serializable {
 
