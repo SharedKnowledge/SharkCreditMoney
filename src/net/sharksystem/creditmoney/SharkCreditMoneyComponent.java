@@ -4,7 +4,9 @@ import net.sharksystem.ASAPFormats;
 import net.sharksystem.SharkComponent;
 import net.sharksystem.asap.ASAPException;
 import net.sharksystem.asap.ASAPSecurityException;
+import net.sharksystem.asap.crypto.ASAPKeyStore;
 
+import java.io.IOException;
 import java.util.Collection;
 
 /**
@@ -159,6 +161,9 @@ public interface SharkCreditMoneyComponent extends SharkComponent {
     /** allow transfer of debtor or creditor - default: yes / true */
     String BEHAVIOUR_SHARK_MONEY_ALLOW_TRANSFER = "SHARK_MONEY_BEHAVIOUR_ALLOW_TRANSFER";
 
+    /** create a channel for sharkCreditBond Messages **/
+    void createChannel(CharSequence uri/*, CharSequence name*/) throws IOException, SharkCreditMoneyException;
+
     /**
      * Create a bond. It is a decentralized system. Bond creation requires interaction of several peers. This
      * method will not return anything. A listener is informed about a successfully signed bond.
@@ -186,4 +191,6 @@ public interface SharkCreditMoneyComponent extends SharkComponent {
     void subscribeSharkCreditBondReceivedListener(SharkCreditBondReceivedListener listener);
 
     void annulBond(SharkCreditBond bond) throws SharkCreditMoneyException, ASAPException;
+
+    byte[] signBond(ASAPKeyStore ASAPKeyStore, SharkCreditBond Bond) throws ASAPSecurityException;
 }

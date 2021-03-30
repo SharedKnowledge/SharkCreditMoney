@@ -3,9 +3,11 @@ package net.sharksystem.creditmoney;
 import net.sharksystem.*;
 import net.sharksystem.asap.ASAPException;
 import net.sharksystem.asap.apps.testsupport.ASAPTestPeerFS;
+import org.junit.Assert;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.Collection;
 
 import static net.sharksystem.creditmoney.TestConstants.*;
 
@@ -39,7 +41,8 @@ public class SharkCreditMoneyComponentTests {
     }
 
     @Test
-    public void sendReceiveCreditBondSignAndResend() throws SharkException, ASAPException, IOException, InterruptedException {
+    public void createSignCreditBondAsCreditorAndSerializeTest() throws SharkException, ASAPException, IOException, InterruptedException {
+
         SharkTestPeerFS.removeFolder(THIS_ROOT_DIRECTORY);
 
         // Setup alice peer
@@ -53,32 +56,14 @@ public class SharkCreditMoneyComponentTests {
         // Set alice component behavior
         aliceComponent.setBehaviour(SharkCreditMoneyComponent.BEHAVIOUR_SHARK_MONEY_ALLOW_TRANSFER, true);
 
-        // Setup bob peer
-        SharkTestPeerFS.removeFolder(BOB_FOLDER);
-        SharkTestPeerFS bobSharkPeer = new SharkTestPeerFS(BOB_NAME, BOB_FOLDER);
-        SharkCreditMoneyComponent bobComponent = this.setupComponent(bobSharkPeer);
+        InMemoSharkCreditBond creditBond = new InMemoSharkCreditBond(ALICE_ID, BOB_ID, BOND_UNIT, BOND_AMOUNT, BOND_ALLOW_TRANSFER);
+        creditBond.setCreditorSignature(aliceComponent.signBond((SharkCertificateComponent) aliceSharkPeer.getComponent(SharkCertificateComponent.class), creditBond));
 
-        // Start bob peer
-        bobSharkPeer.start();
+        byte[] serializedSCreditBond = InMemoSharkCreditBond.serializeCreditBond(creditBond);
 
-        // Set bob component behavior
-        bobComponent.setBehaviour(SharkCreditMoneyComponent.BEHAVIOUR_SHARK_MONEY_ALLOW_TRANSFER, true);
-
-        // Open connection socket
-        aliceSharkPeer.getASAPTestPeerFS().startEncounter(7777, bobSharkPeer.getASAPTestPeerFS());
-
-        // give them moment to exchange data
-        Thread.sleep(1000);
-        System.out.println("slept a moment");
-
-        // Create, sign and send bond to bob
-        aliceComponent.createBond(ALICE_ID, BOB_ID, "EURO", 20);
-
-        // give them moment to exchange data
-        Thread.sleep(1000);
-        System.out.println("slept a moment");
-
-        // Bob must have a credit bond from Alice - he issued it by himself
-
+        Assert.assertEquals(BOND_UNIT, creditBond.unitDescription());
+        Assert.assertEquals(BOND_AMOUNT, creditBond.getAmount());
+        Assert.assertEquals(BOND_ALLOW_TRANSFER, creditBond.allowedToChangeCreditor());
+        Assert.assertEquals(BOND_ALLOW_TRANSFER, creditBond.allowedToChangeDebtor());
     }
 }

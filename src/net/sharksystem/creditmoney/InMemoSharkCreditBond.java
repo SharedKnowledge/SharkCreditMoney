@@ -1,9 +1,5 @@
 package net.sharksystem.creditmoney;
 
-import net.sharksystem.asap.ASAPException;
-import net.sharksystem.asap.ASAPSecurityException;
-import net.sharksystem.asap.crypto.ASAPCryptoAlgorithms;
-import net.sharksystem.asap.crypto.ASAPKeyStore;
 import net.sharksystem.asap.persons.Person;
 import net.sharksystem.asap.utils.ASAPSerialization;
 
@@ -64,6 +60,11 @@ public class InMemoSharkCreditBond implements SharkCreditBond, Serializable {
     }
 
     @Override
+    public byte[] getDebtorSignature() {
+        return this.debtorSignature;
+    }
+
+    @Override
     public boolean signedByDebtor() {
         if (this.debtorSignature == null) {
             return false;
@@ -81,6 +82,7 @@ public class InMemoSharkCreditBond implements SharkCreditBond, Serializable {
      * Set the debtor of this bond
      * @param debtor
      */
+    @Override
     public void setDebtor(Person debtor) throws SharkCreditMoneyException {
         if (this.allowedToChangeDebtor) {
             this.debtor = debtor;
@@ -89,16 +91,17 @@ public class InMemoSharkCreditBond implements SharkCreditBond, Serializable {
         }
     }
 
-    public boolean isDebtorSignatureCorrect(ASAPKeyStore ASAPKeyStore) throws ASAPSecurityException {
-        return  this.isSignatureCorrect(this.debtor.getUUID().toString(), this.toString().getBytes(), this.debtorSignature, ASAPKeyStore);
-    }
-
     /**
      * @return creditor of this bond
      */
     @Override
     public Person getCreditor() {
         return this.creditor;
+    }
+
+    @Override
+    public byte[] getCreditorSignature() {
+        return this.creditorSignature;
     }
 
     @Override
@@ -119,6 +122,7 @@ public class InMemoSharkCreditBond implements SharkCreditBond, Serializable {
      * Set the creditor of this bond
      * @param creditor
      */
+    @Override
     public void setCreditor(Person creditor) throws SharkCreditMoneyException {
         if (this.allowedToChangeCreditor) {
             this.creditor = creditor;
@@ -127,8 +131,14 @@ public class InMemoSharkCreditBond implements SharkCreditBond, Serializable {
         }
     }
 
-    public boolean isCreditorSignatureCorrect(ASAPKeyStore ASAPKeyStore) throws ASAPSecurityException {
-        return  this.isSignatureCorrect(this.creditor.getUUID().toString(), this.toString().getBytes(), this.creditorSignature, ASAPKeyStore);
+    @Override
+    public void setCreditorSignature(byte[] signature) {
+        this.creditorSignature = signature;
+    }
+
+    @Override
+    public void setDebtorSignature(byte[] signature) {
+        this.debtorSignature = signature;
     }
 
     /**
@@ -162,14 +172,6 @@ public class InMemoSharkCreditBond implements SharkCreditBond, Serializable {
 
     public void annulBond() {
         this.setBondAsExpired();
-    }
-
-    public void signBondAsCreditor(ASAPKeyStore ASAPKeyStore) throws ASAPSecurityException {
-        this.creditorSignature = ASAPCryptoAlgorithms.sign(this.toString().getBytes(), ASAPKeyStore);
-    }
-
-    public void signBondAsDebtor(ASAPKeyStore ASAPKeyStore) throws ASAPSecurityException {
-        this.debtorSignature = ASAPCryptoAlgorithms.sign(this.toString().getBytes(), ASAPKeyStore);
     }
 
     @Override
@@ -269,9 +271,5 @@ public class InMemoSharkCreditBond implements SharkCreditBond, Serializable {
     private void setBondAsExpired() {
         Calendar until = Calendar.getInstance();
         this.expirationDate = until.getTimeInMillis();
-    }
-
-    private boolean isSignatureCorrect(String signer, byte[] message, byte[] signature, ASAPKeyStore ASAPKeyStore) throws ASAPSecurityException {
-        return ASAPCryptoAlgorithms.verify(message, signature, signer, ASAPKeyStore);
     }
 }
