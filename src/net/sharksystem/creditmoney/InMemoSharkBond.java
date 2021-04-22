@@ -12,7 +12,7 @@ import java.util.Calendar;
 import java.util.HashSet;
 import java.util.Set;
 
-public class InMemoSharkCreditBond implements SharkCreditBond, Serializable {
+public class InMemoSharkBond implements SharkBond, AdminSharkBond, Serializable {
 
     /**
      * This constant is used to set the bond's expirationDate
@@ -28,7 +28,7 @@ public class InMemoSharkCreditBond implements SharkCreditBond, Serializable {
     private byte[] debtorSignature, creditorSignature;
 
 
-    public InMemoSharkCreditBond(CharSequence unitDescription, int amount) {
+    public InMemoSharkBond(CharSequence unitDescription, int amount) {
         this.unitDescription = unitDescription;
         this.amount = amount;
         this.setExpirationDate();
@@ -38,11 +38,11 @@ public class InMemoSharkCreditBond implements SharkCreditBond, Serializable {
         this.allowedToChangeCreditor = true;
     }
 
-    public InMemoSharkCreditBond(CharSequence creditorID, CharSequence debtorID, CharSequence unitDescription, int amount) {
+    public InMemoSharkBond(CharSequence creditorID, CharSequence debtorID, CharSequence unitDescription, int amount) {
         this(creditorID, debtorID, unitDescription, amount,true);
     }
 
-    public InMemoSharkCreditBond(CharSequence creditorID, CharSequence debtorID, CharSequence unitDescription, int amount, boolean allowTransfer) {
+    public InMemoSharkBond(CharSequence creditorID, CharSequence debtorID, CharSequence unitDescription, int amount, boolean allowTransfer) {
         this.creditor = new PersonImpl(creditorID);
         this.debtor = new PersonImpl(debtorID);
         this.unitDescription = unitDescription;
@@ -209,7 +209,7 @@ public class InMemoSharkCreditBond implements SharkCreditBond, Serializable {
                 '}';
     }
 
-    public static byte [] serializeCreditBond(InMemoSharkCreditBond creditBond) {
+    public static byte [] serializeCreditBond(InMemoSharkBond creditBond) {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ObjectOutputStream out = null;
         byte[] serializedCreditBond = null;
@@ -248,13 +248,13 @@ public class InMemoSharkCreditBond implements SharkCreditBond, Serializable {
         return serializedCreditBond;
     }
 
-    public static InMemoSharkCreditBond deserializeCreditBond(byte[] serializedCreditBond) throws IOException {
+    public static InMemoSharkBond deserializeCreditBond(byte[] serializedCreditBond) throws IOException {
         ByteArrayInputStream bis = new ByteArrayInputStream(serializedCreditBond);
         ObjectInput in = null;
-        InMemoSharkCreditBond creditBond = null;
+        InMemoSharkBond creditBond = null;
         try {
             in = new ObjectInputStream(bis);
-            creditBond = (InMemoSharkCreditBond) in.readObject();
+            creditBond = (InMemoSharkBond) in.readObject();
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         } finally {

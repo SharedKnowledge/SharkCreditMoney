@@ -13,6 +13,6 @@ public class SharkCreditMoneyComponentFactory implements SharkComponentFactory {
 
     @Override
     public SharkComponent getComponent() {
-        return new SharkCreditMoneyComponentImpl(certificateComponent);
+        return new SharkMoneyComponentImpl(certificateComponent);
     }
 }

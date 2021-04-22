@@ -57,12 +57,20 @@ public class SharkCreditMoneyComponentTests {
         SharkTestPeerFS bobSharkPeer = new SharkTestPeerFS(BOB_NAME, BOB_FOLDER);
         SharkCreditMoneyComponent bobComponent = this.setupComponent(bobSharkPeer);
 
+        SharkBondReceivedListener bobListener = new DummySharkBondReceivedListener();
+        bobComponent.subscribeBondReceivedListener(bobListener);
+
         // Start bob peer
         bobSharkPeer.start();
 
-        // Create, sign and send bond to bob
-        aliceComponent.createBond(ALICE_ID, BOB_ID, "EURO", 20);
+        ////////////////////////////////// bond specific tests start here
+        // Create a bond: Creditor Alice, debtor Bob of 20 "Euro"
+        SharkBond bondAliceBob = aliceComponent.createBond(ALICE_ID, BOB_ID, "EURO", 20);
 
+        bondAliceBob.setAllowedToChangeCreditor(true);
+        bondAliceBob.setAllowedToChangeDebtor(true);
+
+        ///////////////////////////////// ASAP specific code - make an encounter Alice Bob
         aliceSharkPeer.getASAPTestPeerFS().startEncounter(7777, bobSharkPeer.getASAPTestPeerFS());
 
         // give them moment to exchange data
@@ -79,6 +87,28 @@ public class SharkCreditMoneyComponentTests {
     @Test
     public void bobCreatesBondAsDebtor() {
         // TODO
+    }
+
+    private class DummySharkBondReceivedListener implements SharkBondReceivedListener {
+        @Override
+        public void requestSignAsCreditor(SharkBond bond) throws ASAPException {
+
+        }
+
+        @Override
+        public void requestSignAsDebtor(SharkBond bond) throws ASAPException {
+
+        }
+
+        @Override
+        public void requestChangeCreditor(SharkBond bond) throws ASAPException {
+
+        }
+
+        @Override
+        public void requestChangeDebtor(SharkBond bond) throws ASAPException {
+
+        }
     }
 
     /**

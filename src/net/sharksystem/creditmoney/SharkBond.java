@@ -18,7 +18,7 @@ import net.sharksystem.asap.persons.Person;
  *
  *
  */
-public interface SharkCreditBond {
+public interface SharkBond {
     /**
      * There is an id that makes any bond unique.
      * @return unique permanent id of this bond.
