@@ -1,5 +1,6 @@
 package net.sharksystem.creditmoney;
 
+import net.sharksystem.AbstractSharkComponent;
 import net.sharksystem.SharkCertificateComponent;
 import net.sharksystem.SharkException;
 import net.sharksystem.SharkUnknownBehaviourException;
@@ -10,7 +11,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 
-public class SharkCreditMoneyComponentImpl implements
+public class SharkCreditMoneyComponentImpl extends AbstractSharkComponent implements
         SharkCreditMoneyComponent, SharkCreditBondReceivedListener, ASAPMessageReceivedListener {
     private final SharkCertificateComponent certificateComponent;
     private ASAPPeer asapPeer;
@@ -137,12 +138,15 @@ public class SharkCreditMoneyComponentImpl implements
 
     @Override
     public void setBehaviour(String behaviour, boolean on) throws SharkUnknownBehaviourException {
+        /* no component specific behaviour here.
         switch (behaviour) {
             case SharkCreditMoneyComponent.BEHAVIOUR_SHARK_MONEY_ALLOW_TRANSFER:
                 this.allowTransfer = on; break;
 
             default: throw new SharkUnknownBehaviourException(behaviour);
-        }
+        }*/
+
+        super.setBehaviour(behaviour, on);
     }
 
     @Override

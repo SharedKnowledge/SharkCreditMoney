@@ -2,7 +2,7 @@ package net.sharksystem.creditmoney;
 
 import net.sharksystem.*;
 import net.sharksystem.asap.ASAPException;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import java.io.IOException;
 
@@ -37,8 +37,12 @@ public class SharkCreditMoneyComponentTests {
         return sharkCreditMoneyComponent;
     }
 
+    /**
+     * Test full roundtrip to create an bond: Alice creates a bond as creditor with debtor Bob. Bob receives and
+     * signs this bond which becomes complete.
+     */
     @Test
-    public void sendReceiveCreditBondSignAndResend() throws SharkException, ASAPException, IOException, InterruptedException {
+    public void aliceCreatesBondAsCreditor() throws SharkException, ASAPException, IOException, InterruptedException {
         SharkTestPeerFS.removeFolder(THIS_ROOT_DIRECTORY);
 
         // Setup alice peer
@@ -47,9 +51,6 @@ public class SharkCreditMoneyComponentTests {
 
         // Start alice peer
         aliceSharkPeer.start();
-
-        // Set alice component behavior
-        aliceComponent.setBehaviour(SharkCreditMoneyComponent.BEHAVIOUR_SHARK_MONEY_ALLOW_TRANSFER, true);
 
         // Setup bob peer
         SharkTestPeerFS.removeFolder(BOB_FOLDER);
@@ -72,4 +73,20 @@ public class SharkCreditMoneyComponentTests {
         // Bob must have a credit bond from Alice - he issued it by himself
 
     }
+    /**
+     * Bob creates Bond as debtor. Alice accepts as creditor.
+     */
+    @Test
+    public void bobCreatesBondAsDebtor() {
+        // TODO
+    }
+
+    /**
+     * Bond (Alice (creditor), bob (deptor). Alice wants to change creditor to Clara.
+     */
+
+    /**
+     * Bond (Alice (creditor), bob (deptor). Bob wants to change creditor to Clara.
+     */
+
 }

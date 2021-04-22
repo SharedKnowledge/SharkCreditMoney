@@ -1,8 +1,7 @@
 package net.sharksystem.creditmoney;
 
 import net.sharksystem.*;
-import org.junit.jupiter.api.Test;
-import net.sharksystem.asap.crypto.ASAPCryptoAlgorithms;
+import org.junit.Test;
 
 import static net.sharksystem.creditmoney.TestConstants.*;
 

@@ -54,6 +54,11 @@ public class InMemoSharkCreditBond implements SharkCreditBond, Serializable {
         this.allowedToChangeCreditor = allowTransfer;
     }
 
+    @Override
+    public int getBondID() {
+        return 0;
+    }
+
     /**
      * @return debtor of this bond
      */
@@ -74,6 +79,11 @@ public class InMemoSharkCreditBond implements SharkCreditBond, Serializable {
     @Override
     public boolean allowedToChangeDebtor() {
         return this.allowedToChangeDebtor;
+    }
+
+    @Override
+    public void setAllowedToChangeDebtor(boolean on) throws SharkCreditMoneyException {
+
     }
 
     /**
@@ -114,6 +124,11 @@ public class InMemoSharkCreditBond implements SharkCreditBond, Serializable {
         return this.allowedToChangeCreditor;
     }
 
+    @Override
+    public void setAllowedToChangeCreditor(boolean on) throws SharkCreditMoneyException {
+
+    }
+
     /**
      * Set the creditor of this bond
      * @param creditor
@@ -141,6 +156,11 @@ public class InMemoSharkCreditBond implements SharkCreditBond, Serializable {
         return this.unitDescription;
     }
 
+    @Override
+    public void setUnitDescription(CharSequence description) {
+
+    }
+
     /**
      * @return amounts of whatever unit you defined.
      */
@@ -152,6 +172,11 @@ public class InMemoSharkCreditBond implements SharkCreditBond, Serializable {
     @Override
     public long getExpirationDate() {
         return this.expirationDate;
+    }
+
+    @Override
+    public boolean isAnnulled() {
+        return false;
     }
 
     public void extendCreditBondValidity() {
