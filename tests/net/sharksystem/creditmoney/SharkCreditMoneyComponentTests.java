@@ -2,13 +2,9 @@ package net.sharksystem.creditmoney;
 
 import net.sharksystem.*;
 import net.sharksystem.asap.ASAPException;
-import net.sharksystem.asap.ASAPSecurityException;
-import net.sharksystem.asap.apps.testsupport.ASAPTestPeerFS;
-import org.junit.Assert;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import java.io.IOException;
-import java.util.Collection;
 
 import static net.sharksystem.creditmoney.TestConstants.*;
 
@@ -41,185 +37,86 @@ public class SharkCreditMoneyComponentTests {
         return sharkCreditMoneyComponent;
     }
 
+    /**
+     * Test full roundtrip to create an bond: Alice creates a bond as creditor with debtor Bob. Bob receives and
+     * signs this bond which becomes complete.
+     */
     @Test
-    public void createSignCreditBondAsCreditorAndSerializeTest() throws SharkException, ASAPException, IOException, InterruptedException {
-
+    public void aliceCreatesBondAsCreditor() throws SharkException, ASAPException, IOException, InterruptedException {
         SharkTestPeerFS.removeFolder(THIS_ROOT_DIRECTORY);
 
         // Setup alice peer
-        SharkTestPeerFS.removeFolder(ALICE_FOLDER);
         SharkTestPeerFS aliceSharkPeer = new SharkTestPeerFS(ALICE_ID, ALICE_FOLDER);
         SharkCreditMoneyComponent aliceComponent = this.setupComponent(aliceSharkPeer);
-        SharkCertificateComponent aliceCertificationComponent = (SharkCertificateComponent) aliceSharkPeer.getComponent(SharkCertificateComponent.class);
 
         // Start alice peer
         aliceSharkPeer.start();
-
-        // Set alice component behavior
-        aliceComponent.setBehaviour(SharkCreditMoneyComponent.BEHAVIOUR_SHARK_MONEY_ALLOW_TRANSFER, true);
-
-        InMemoSharkCreditBond creditBond = new InMemoSharkCreditBond(ALICE_ID, BOB_ID, BOND_UNIT, BOND_AMOUNT, BOND_ALLOW_TRANSFER);
-        creditBond.setCreditorSignature(aliceComponent.signBond(aliceCertificationComponent, creditBond));
-
-        byte[] serializedSCreditBond = InMemoSharkCreditBond.serializeCreditBond(creditBond);
-
-        Assert.assertEquals(ALICE_ID, creditBond.getCreditor());
-        Assert.assertEquals(BOB_ID, creditBond.getDebtor());
-        Assert.assertEquals(BOND_UNIT, creditBond.unitDescription());
-        Assert.assertEquals(BOND_AMOUNT, creditBond.getAmount());
-        Assert.assertEquals(BOND_ALLOW_TRANSFER, creditBond.allowedToChangeCreditor());
-        Assert.assertEquals(BOND_ALLOW_TRANSFER, creditBond.allowedToChangeDebtor());
-
-        // Check if serialized bond is not null
-        Assert.assertNotNull(serializedSCreditBond);
-
-        // Check creditor signature
-        Assert.assertTrue(aliceComponent.isCreditorSignatureCorrect(creditBond, aliceCertificationComponent));
-    }
-
-    @Test
-    public void createSignCreditBondSerializeDeserializeTest() throws SharkException, ASAPSecurityException, IOException {
-        SharkTestPeerFS.removeFolder(THIS_ROOT_DIRECTORY);
-
-        // Setup alice peer
-        SharkTestPeerFS.removeFolder(ALICE_FOLDER);
-        SharkTestPeerFS aliceSharkPeer = new SharkTestPeerFS(ALICE_ID, ALICE_FOLDER);
-        SharkCreditMoneyComponent aliceComponent = this.setupComponent(aliceSharkPeer);
-        SharkCertificateComponent aliceCertificationComponent = (SharkCertificateComponent) aliceSharkPeer.getComponent(SharkCertificateComponent.class);
-
-        // Start alice peer
-        aliceSharkPeer.start();
-
-        // Set alice component behavior
-        aliceComponent.setBehaviour(SharkCreditMoneyComponent.BEHAVIOUR_SHARK_MONEY_ALLOW_TRANSFER, true);
-
-        InMemoSharkCreditBond creditBond = new InMemoSharkCreditBond(ALICE_ID, BOB_ID, BOND_UNIT, BOND_AMOUNT, BOND_ALLOW_TRANSFER);
-        creditBond.setCreditorSignature(aliceComponent.signBond(aliceCertificationComponent, creditBond));
-
-        byte[] serializedSCreditBond = InMemoSharkCreditBond.serializeCreditBond(creditBond);
-
-        // Deserialize bond and check if all infos are still correct
-        InMemoSharkCreditBond deserializedCreditBond = InMemoSharkCreditBond.deserializeCreditBond(serializedSCreditBond);
-
-        Assert.assertEquals(deserializedCreditBond.unitDescription(), creditBond.unitDescription());
-        Assert.assertEquals(deserializedCreditBond.getAmount(), creditBond.getAmount());
-        Assert.assertEquals(deserializedCreditBond.allowedToChangeCreditor(), creditBond.allowedToChangeCreditor());
-        Assert.assertEquals(deserializedCreditBond.allowedToChangeDebtor(), creditBond.allowedToChangeDebtor());
-    }
-
-    @Test
-    public void createSignCreditBondAsCreditorAndSignAsDebtorTest() throws SharkException, ASAPSecurityException {
-        SharkTestPeerFS.removeFolder(THIS_ROOT_DIRECTORY);
-
-        // Setup alice peer
-        SharkTestPeerFS.removeFolder(ALICE_FOLDER);
-        SharkTestPeerFS aliceSharkPeer = new SharkTestPeerFS(ALICE_ID, ALICE_FOLDER);
-        SharkCreditMoneyComponent aliceComponent = this.setupComponent(aliceSharkPeer);
-        SharkCertificateComponent aliceCertificationComponent = (SharkCertificateComponent) aliceSharkPeer.getComponent(SharkCertificateComponent.class);
-
-        // Start alice peer
-        aliceSharkPeer.start();
-
-        // Set alice component behavior
-        aliceComponent.setBehaviour(SharkCreditMoneyComponent.BEHAVIOUR_SHARK_MONEY_ALLOW_TRANSFER, true);
 
         // Setup bob peer
         SharkTestPeerFS.removeFolder(BOB_FOLDER);
-        SharkTestPeerFS bobSharkPeer = new SharkTestPeerFS(BOB_ID, BOB_FOLDER);
+        SharkTestPeerFS bobSharkPeer = new SharkTestPeerFS(BOB_NAME, BOB_FOLDER);
         SharkCreditMoneyComponent bobComponent = this.setupComponent(bobSharkPeer);
-        SharkCertificateComponent bobCertificationComponent = (SharkCertificateComponent) bobSharkPeer.getComponent(SharkCertificateComponent.class);
+
+        SharkBondReceivedListener bobListener = new DummySharkBondReceivedListener();
+        bobComponent.subscribeBondReceivedListener(bobListener);
 
         // Start bob peer
         bobSharkPeer.start();
 
-        // Set bob component behavior
-        bobComponent.setBehaviour(SharkCreditMoneyComponent.BEHAVIOUR_SHARK_MONEY_ALLOW_TRANSFER, true);
+        ////////////////////////////////// bond specific tests start here
+        // Create a bond: Creditor Alice, debtor Bob of 20 "Euro"
+        SharkBond bondAliceBob = aliceComponent.createBond(ALICE_ID, BOB_ID, "EURO", 20);
 
+        bondAliceBob.setAllowedToChangeCreditor(true);
+        bondAliceBob.setAllowedToChangeDebtor(true);
 
-        InMemoSharkCreditBond creditBond = new InMemoSharkCreditBond(ALICE_ID, BOB_ID, BOND_UNIT, BOND_AMOUNT, BOND_ALLOW_TRANSFER);
-        creditBond.setCreditorSignature(aliceComponent.signBond(aliceCertificationComponent, creditBond));
-        creditBond.setDebtorSignature(bobComponent.signBond(bobCertificationComponent, creditBond));
+        ///////////////////////////////// ASAP specific code - make an encounter Alice Bob
+        aliceSharkPeer.getASAPTestPeerFS().startEncounter(7777, bobSharkPeer.getASAPTestPeerFS());
 
-        byte[] serializedSCreditBond = InMemoSharkCreditBond.serializeCreditBond(creditBond);
+        // give them moment to exchange data
+        Thread.sleep(1000);
+        //Thread.sleep(Long.MAX_VALUE);
+        System.out.println("slept a moment");
 
-        Assert.assertEquals(ALICE_ID, creditBond.getCreditor());
-        Assert.assertEquals(BOB_ID, creditBond.getDebtor());
-        Assert.assertEquals(BOND_UNIT, creditBond.unitDescription());
-        Assert.assertEquals(BOND_AMOUNT, creditBond.getAmount());
-        Assert.assertEquals(BOND_ALLOW_TRANSFER, creditBond.allowedToChangeCreditor());
-        Assert.assertEquals(BOND_ALLOW_TRANSFER, creditBond.allowedToChangeDebtor());
+        // Bob must have a credit bond from Alice - he issued it by himself
 
-        // Check if serialized bond is not null
-        Assert.assertNotNull(serializedSCreditBond);
-
-        // Check creditor signature
-        Assert.assertTrue(aliceComponent.isCreditorSignatureCorrect(creditBond, aliceCertificationComponent));
-        Assert.assertTrue(bobComponent.isDebtorSignatureCorrect(creditBond, bobCertificationComponent));
     }
-
+    /**
+     * Bob creates Bond as debtor. Alice accepts as creditor.
+     */
     @Test
-    public void transferCreditBondToNewCreditor() throws SharkException, ASAPSecurityException {
-        SharkTestPeerFS.removeFolder(THIS_ROOT_DIRECTORY);
-
-        // Setup alice peer
-        SharkTestPeerFS.removeFolder(ALICE_FOLDER);
-        SharkTestPeerFS aliceSharkPeer = new SharkTestPeerFS(ALICE_ID, ALICE_FOLDER);
-        SharkCreditMoneyComponent aliceComponent = this.setupComponent(aliceSharkPeer);
-        SharkCertificateComponent aliceCertificationComponent = (SharkCertificateComponent) aliceSharkPeer.getComponent(SharkCertificateComponent.class);
-
-        // Start alice peer
-        aliceSharkPeer.start();
-
-        // Set alice component behavior
-        aliceComponent.setBehaviour(SharkCreditMoneyComponent.BEHAVIOUR_SHARK_MONEY_ALLOW_TRANSFER, true);
-
-        // Setup bob peer
-        SharkTestPeerFS.removeFolder(BOB_FOLDER);
-        SharkTestPeerFS bobSharkPeer = new SharkTestPeerFS(BOB_ID, BOB_FOLDER);
-        SharkCreditMoneyComponent bobComponent = this.setupComponent(bobSharkPeer);
-        SharkCertificateComponent bobCertificationComponent = (SharkCertificateComponent) bobSharkPeer.getComponent(SharkCertificateComponent.class);
-
-        // Start bob peer
-        bobSharkPeer.start();
-
-        // Set bob component behavior
-        bobComponent.setBehaviour(SharkCreditMoneyComponent.BEHAVIOUR_SHARK_MONEY_ALLOW_TRANSFER, true);
-
-        // Setup bob peer
-        SharkTestPeerFS.removeFolder(CLARA_ID);
-        SharkTestPeerFS claraSharkPeer = new SharkTestPeerFS(CLARA_ID, CLARA_FOLDER);
-        SharkCreditMoneyComponent claraComponent = this.setupComponent(bobSharkPeer);
-        SharkCertificateComponent claraCertificationComponent = (SharkCertificateComponent) claraSharkPeer.getComponent(SharkCertificateComponent.class);
-
-        // Start clara peer
-        claraSharkPeer.start();
-
-        // Set clara component behavior
-        claraComponent.setBehaviour(SharkCreditMoneyComponent.BEHAVIOUR_SHARK_MONEY_ALLOW_TRANSFER, true);
-
-        InMemoSharkCreditBond creditBond = new InMemoSharkCreditBond(ALICE_ID, BOB_ID, BOND_UNIT, BOND_AMOUNT, BOND_ALLOW_TRANSFER);
-        creditBond.setCreditorSignature(aliceComponent.signBond(aliceCertificationComponent, creditBond));
-        creditBond.setDebtorSignature(bobComponent.signBond(bobCertificationComponent, creditBond));
-
-        Assert.assertEquals(ALICE_ID, creditBond.getCreditor());
-        Assert.assertEquals(BOB_ID, creditBond.getDebtor());
-
-        // Check creditor & debtor signature
-        Assert.assertTrue(aliceComponent.isCreditorSignatureCorrect(creditBond, aliceCertificationComponent));
-        Assert.assertTrue(bobComponent.isDebtorSignatureCorrect(creditBond, bobCertificationComponent));
-
-        // transfer credit bond to new creditor
-        creditBond.setDebtor(new PersonImpl(CLARA_ID));
-        creditBond.setDebtorSignature(claraComponent.signBond(claraCertificationComponent, creditBond));
-
-        Assert.assertEquals(CLARA_ID, creditBond.getDebtor());
-
-        // Check debtor signature
-        Assert.assertTrue(claraComponent.isDebtorSignatureCorrect(creditBond, claraCertificationComponent));
+    public void bobCreatesBondAsDebtor() {
+        // TODO
     }
 
-    @Test
-    public void transferCreditBondToNewDebtor() {
+    private class DummySharkBondReceivedListener implements SharkBondReceivedListener {
+        @Override
+        public void requestSignAsCreditor(SharkBond bond) throws ASAPException {
 
+        }
+
+        @Override
+        public void requestSignAsDebtor(SharkBond bond) throws ASAPException {
+
+        }
+
+        @Override
+        public void requestChangeCreditor(SharkBond bond) throws ASAPException {
+
+        }
+
+        @Override
+        public void requestChangeDebtor(SharkBond bond) throws ASAPException {
+
+        }
     }
+
+    /**
+     * Bond (Alice (creditor), bob (deptor). Alice wants to change creditor to Clara.
+     */
+
+    /**
+     * Bond (Alice (creditor), bob (deptor). Bob wants to change creditor to Clara.
+     */
+
 }

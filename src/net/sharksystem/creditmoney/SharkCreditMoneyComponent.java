@@ -3,10 +3,7 @@ package net.sharksystem.creditmoney;
 import net.sharksystem.ASAPFormats;
 import net.sharksystem.SharkComponent;
 import net.sharksystem.asap.ASAPException;
-import net.sharksystem.asap.ASAPSecurityException;
-import net.sharksystem.asap.crypto.ASAPKeyStore;
 
-import java.io.IOException;
 import java.util.Collection;
 
 /**
@@ -158,25 +155,20 @@ public interface SharkCreditMoneyComponent extends SharkComponent {
     String SHARK_CREDIT_MONEY_SIGNED_BOND_URI = "sharkMoney://signedBond";
     String SHARK_CREDIT_MONEY_ANNUL_BOND_URI = "sharkMoney://annulBond";
 
-    /** allow transfer of debtor or creditor - default: yes / true */
-    String BEHAVIOUR_SHARK_MONEY_ALLOW_TRANSFER = "SHARK_MONEY_BEHAVIOUR_ALLOW_TRANSFER";
-
-    /** create a channel for sharkCreditBond Messages **/
-    void createChannel(CharSequence uri/*, CharSequence name*/) throws IOException, SharkCreditMoneyException;
-
     /**
      * Create a bond. It is a decentralized system. Bond creation requires interaction of several peers. This
      * method will not return anything. A listener is informed about a successfully signed bond.
      * @throws
+     * @return
      */
-    void createBond(CharSequence creditorID, CharSequence debtorID, CharSequence unit, int amount)
+    SharkBond createBond(CharSequence creditorID, CharSequence debtorID, CharSequence unit, int amount)
             throws SharkCreditMoneyException, ASAPException;
 
-    Collection<SharkCreditBond> getBondsByCreditor(CharSequence creditorID) throws SharkCreditMoneyException;
+    Collection<SharkBond> getBondsByCreditor(CharSequence creditorID) throws SharkCreditMoneyException;
 
-    Collection<SharkCreditBond> getBondsByDebtor(CharSequence debtorID) throws SharkCreditMoneyException;
+    Collection<SharkBond> getBondsByDebtor(CharSequence debtorID) throws SharkCreditMoneyException;
 
-    Collection<SharkCreditBond> getBondsByCreditorAndDebtor(CharSequence creditorID, CharSequence debtorID) throws SharkCreditMoneyException;
+    Collection<SharkBond> getBondsByCreditorAndDebtor(CharSequence creditorID, CharSequence debtorID) throws SharkCreditMoneyException;
 
     /**
      * The former debtor asks to replace it with new one.
@@ -184,17 +176,11 @@ public interface SharkCreditMoneyComponent extends SharkComponent {
      * @param newDebtorID
      * @throws SharkCreditMoneyException e.g. this peer is not debtor of this bond, missing certificate(s)
      */
-    void replaceDebtor(SharkCreditBond bond, CharSequence newDebtorID) throws SharkCreditMoneyException, ASAPException;
+    void replaceDebtor(SharkBond bond, CharSequence newDebtorID) throws SharkCreditMoneyException, ASAPException;
 
-    void replaceCreditor(SharkCreditBond bond, CharSequence newCreditorID) throws SharkCreditMoneyException, ASAPException;
+    void replaceCreditor(SharkBond bond, CharSequence newCreditorID) throws SharkCreditMoneyException, ASAPException;
 
-    void subscribeSharkCreditBondReceivedListener(SharkCreditBondReceivedListener listener);
+    void subscribeBondReceivedListener(SharkBondReceivedListener listener);
 
-    void annulBond(SharkCreditBond bond) throws SharkCreditMoneyException, ASAPException;
-
-    boolean isCreditorSignatureCorrect(SharkCreditBond CreditBond, ASAPKeyStore ASAPKeyStore) throws ASAPSecurityException;
-
-    boolean isDebtorSignatureCorrect(SharkCreditBond CreditBond, ASAPKeyStore ASAPKeyStore) throws ASAPSecurityException;
-
-    byte[] signBond(ASAPKeyStore ASAPKeyStore, SharkCreditBond Bond) throws ASAPSecurityException;
+    void annulBond(SharkBond bond) throws SharkCreditMoneyException, ASAPException;
 }
