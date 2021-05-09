@@ -1,6 +1,6 @@
 package net.sharksystem.creditmoney;
 
-import net.sharksystem.asap.persons.Person;
+import java.io.IOException;
 
 /**
  * Each bond is about a depth. It is assumed that this depth can be described as integer value with a unit.
@@ -23,25 +23,37 @@ public interface SharkBond {
      * There is an id that makes any bond unique.
      * @return unique permanent id of this bond.
      */
-    int getBondID();
+    CharSequence getBondID();
 
     /**
      * @return debtor of this bond
      */
-    Person getDebtor();
+    CharSequence getDebtorID();
+
+    byte[] getDebtorSignature();
 
     boolean signedByDebtor();
     boolean allowedToChangeDebtor();
     void setAllowedToChangeDebtor(boolean on) throws SharkCreditMoneyException;
 
+    void setDebtorID(CharSequence debtorID) throws SharkCreditMoneyException;
+
     /**
      * @return creditor of this bond
      */
-    Person getCreditor();
+    CharSequence getCreditorID();
+
+    byte[] getCreditorSignature();
 
     boolean signedByCreditor();
     boolean allowedToChangeCreditor();
     void setAllowedToChangeCreditor(boolean on) throws SharkCreditMoneyException;
+
+    void setCreditorID(CharSequence creditorID) throws SharkCreditMoneyException;
+
+    void setCreditorSignature(byte[] signature);
+
+    void setDebtorSignature(byte[] signature);
 
     /**
      * A bond defines a kind of depth. Each bond can have its own unit, e.g. bar of gold-pressed latinum, a favour,
@@ -59,4 +71,8 @@ public interface SharkBond {
 
     long getExpirationDate();
     boolean isAnnulled();
+
+    void extendCreditBondValidity();
+
+    void annulBond();
 }

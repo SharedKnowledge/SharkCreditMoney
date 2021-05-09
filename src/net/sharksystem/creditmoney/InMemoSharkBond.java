@@ -4,8 +4,9 @@ import net.sharksystem.asap.persons.Person;
 import net.sharksystem.asap.utils.ASAPSerialization;
 import java.io.*;
 import java.util.Calendar;
+import java.util.UUID;
 
-public class InMemoSharkBond implements SharkBond, AdminSharkBond, Serializable {
+public class InMemoSharkBond implements SharkBond, Serializable {
 
     /**
      * This constant is used to set the bond's expirationDate
@@ -17,11 +18,13 @@ public class InMemoSharkBond implements SharkBond, AdminSharkBond, Serializable 
     private final int amount;
     private final boolean allowedToChangeDebtor, allowedToChangeCreditor;
     private long expirationDate;
-    private Person debtor, creditor;
+    private CharSequence bondID;
+    private CharSequence debtorID, creditorID;
     private byte[] debtorSignature, creditorSignature;
 
 
     public InMemoSharkBond(CharSequence unitDescription, int amount) {
+        this.bondID = generateBondID();
         this.unitDescription = unitDescription;
         this.amount = amount;
         this.setExpirationDate();
@@ -36,8 +39,9 @@ public class InMemoSharkBond implements SharkBond, AdminSharkBond, Serializable 
     }
 
     public InMemoSharkBond(CharSequence creditorID, CharSequence debtorID, CharSequence unitDescription, int amount, boolean allowTransfer) {
-        this.creditor = new PersonImpl(creditorID);
-        this.debtor = new PersonImpl(debtorID);
+        this.bondID = generateBondID();
+        this.creditorID = creditorID;
+        this.debtorID = debtorID;
         this.unitDescription = unitDescription;
         this.amount = amount;
         this.setExpirationDate();
@@ -48,16 +52,16 @@ public class InMemoSharkBond implements SharkBond, AdminSharkBond, Serializable 
     }
 
     @Override
-    public int getBondID() {
-        return 0;
+    public CharSequence getBondID() {
+        return this.bondID;
     }
 
     /**
      * @return debtor of this bond
      */
     @Override
-    public Person getDebtor() {
-        return this.debtor;
+    public CharSequence getDebtorID() {
+        return this.debtorID;
     }
 
     @Override
@@ -86,12 +90,12 @@ public class InMemoSharkBond implements SharkBond, AdminSharkBond, Serializable 
 
     /**
      * Set the debtor of this bond
-     * @param debtor
+     * @param debtorID
      */
     @Override
-    public void setDebtor(Person debtor) throws SharkCreditMoneyException {
+    public void setDebtorID(CharSequence debtorID) throws SharkCreditMoneyException {
         if (this.allowedToChangeDebtor) {
-            this.debtor = debtor;
+            this.debtorID = debtorID;
         } else {
             throw new SharkCreditMoneyException("Method not allowed. The current bond's debtor can't be changed");
         }
@@ -101,8 +105,8 @@ public class InMemoSharkBond implements SharkBond, AdminSharkBond, Serializable 
      * @return creditor of this bond
      */
     @Override
-    public Person getCreditor() {
-        return this.creditor;
+    public CharSequence getCreditorID() {
+        return this.creditorID;
     }
 
     @Override
@@ -131,12 +135,12 @@ public class InMemoSharkBond implements SharkBond, AdminSharkBond, Serializable 
 
     /**
      * Set the creditor of this bond
-     * @param creditor
+     * @param creditorID
      */
     @Override
-    public void setCreditor(Person creditor) throws SharkCreditMoneyException {
+    public void setCreditorID(CharSequence creditorID) throws SharkCreditMoneyException {
         if (this.allowedToChangeCreditor) {
-            this.creditor = creditor;
+            this.creditorID = creditorID;
         } else {
             throw new SharkCreditMoneyException("Method not allowed. The current bond's creditor can't be changed");
         }
@@ -186,11 +190,13 @@ public class InMemoSharkBond implements SharkBond, AdminSharkBond, Serializable 
         return false;
     }
 
+    @Override
     public void extendCreditBondValidity() {
         //TODO: extend bond's validity to one year.
         this.setExpirationDate(this.expirationDate);
     }
 
+    @Override
     public void annulBond() {
         this.setBondAsExpired();
     }
@@ -198,83 +204,14 @@ public class InMemoSharkBond implements SharkBond, AdminSharkBond, Serializable 
     @Override
     public String toString() {
         return "CreditBond{" +
-                "creditorID=" + creditor.getUUID() +
-                ", debtorID=" + debtor.getUUID() +
+                "creditorID=" + creditorID +
+                ", debtorID=" + debtorID +
                 ", unitDescription=" + unitDescription +
                 ", amount=" + amount +
                 ", expirationDate=" + expirationDate +
                 ", creditorSignature=" + creditorSignature +
                 ", debtorSignature=" + debtorSignature +
                 '}';
-    }
-
-    public static byte [] serializeCreditBond(InMemoSharkBond creditBond) {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream out = null;
-        byte[] serializedCreditBond = null;
-        try {
-            out = new ObjectOutputStream(bos);
-            out.writeObject(creditBond);
-            out.flush();
-            serializedCreditBond = bos.toByteArray();
-            ///// content
-            ASAPSerialization.writeByteArray(serializedCreditBond, bos);
-            ///// sender
-            // ASAPSerialization.writeCharSequenceParameter(creditBond.creditor.getUUID(), bos);
-            ///// recipients
-            // Set<CharSequence> recipients = new HashSet<>();
-            // recipients.add(creditBond.debtor.getUUID());
-            // ASAPSerialization.writeCharSequenceSetParameter(recipients, bos);
-            ///// timestamp
-            // Timestamp creationTime = new Timestamp(System.currentTimeMillis());
-            // String timestampString = creationTime.toString();
-            // ASAPSerialization.writeCharSequenceParameter(timestampString, bos);
-
-            serializedCreditBond = bos.toByteArray();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                bos.close();
-            } catch (IOException ex) {
-                // ignore close exception
-                serializedCreditBond = null;
-            }
-        }
-
-        return serializedCreditBond;
-    }
-
-    public static InMemoSharkBond deserializeCreditBond(byte[] serializedCreditBond) throws IOException {
-        ByteArrayInputStream bis = new ByteArrayInputStream(serializedCreditBond);
-        ObjectInput in = null;
-        InMemoSharkBond creditBond = null;
-        try {
-            ////// content
-            // byte[] snMessage = ASAPSerialization.readByteArray(bis);
-            ////// sender
-            // String snSender = ASAPSerialization.readCharSequenceParameter(bis);
-            ////// recipients
-            // Set<CharSequence> snReceivers = ASAPSerialization.readCharSequenceSetParameter(bis);
-            ///// timestamp
-            // String timestampString = ASAPSerialization.readCharSequenceParameter(bis);
-            // Timestamp creationTime = Timestamp.valueOf(timestampString);
-            in = new ObjectInputStream(bis);
-            creditBond = (InMemoSharkBond) in.readObject();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (in != null) {
-                    in.close();
-                }
-            } catch (IOException ex) {
-                // ignore close exception
-                creditBond = null;
-            }
-        }
-
-        return creditBond;
     }
 
     private void setExpirationDate() {
@@ -292,5 +229,10 @@ public class InMemoSharkBond implements SharkBond, AdminSharkBond, Serializable 
     private void setBondAsExpired() {
         Calendar until = Calendar.getInstance();
         this.expirationDate = until.getTimeInMillis();
+    }
+
+    private static CharSequence generateBondID() {
+        UUID uuid = UUID.randomUUID();
+        return uuid.toString();
     }
 }

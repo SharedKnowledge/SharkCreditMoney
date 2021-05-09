@@ -4,6 +4,7 @@ import net.sharksystem.ASAPFormats;
 import net.sharksystem.SharkComponent;
 import net.sharksystem.asap.ASAPException;
 
+import java.io.IOException;
 import java.util.Collection;
 
 /**
@@ -155,14 +156,17 @@ public interface SharkCreditMoneyComponent extends SharkComponent {
     String SHARK_CREDIT_MONEY_SIGNED_BOND_URI = "sharkMoney://signedBond";
     String SHARK_CREDIT_MONEY_ANNUL_BOND_URI = "sharkMoney://annulBond";
 
+    /** allow transfer of debtor or creditor - default: yes / true */
+    String BEHAVIOUR_SHARK_MONEY_ALLOW_TRANSFER = "SHARK_MONEY_BEHAVIOUR_ALLOW_TRANSFER";
+
     /**
      * Create a bond. It is a decentralized system. Bond creation requires interaction of several peers. This
      * method will not return anything. A listener is informed about a successfully signed bond.
      * @throws
      * @return
      */
-    SharkBond createBond(CharSequence creditorID, CharSequence debtorID, CharSequence unit, int amount)
-            throws SharkCreditMoneyException, ASAPException;
+    void createBond(CharSequence creditorID, CharSequence debtorID, CharSequence unit, int amount)
+            throws SharkCreditMoneyException, ASAPException, IOException;
 
     Collection<SharkBond> getBondsByCreditor(CharSequence creditorID) throws SharkCreditMoneyException;
 
@@ -176,9 +180,9 @@ public interface SharkCreditMoneyComponent extends SharkComponent {
      * @param newDebtorID
      * @throws SharkCreditMoneyException e.g. this peer is not debtor of this bond, missing certificate(s)
      */
-    void replaceDebtor(SharkBond bond, CharSequence newDebtorID) throws SharkCreditMoneyException, ASAPException;
+    void replaceDebtor(SharkBond bond, CharSequence newDebtorID) throws SharkCreditMoneyException, ASAPException, IOException;
 
-    void replaceCreditor(SharkBond bond, CharSequence newCreditorID) throws SharkCreditMoneyException, ASAPException;
+    void replaceCreditor(SharkBond bond, CharSequence newCreditorID) throws SharkCreditMoneyException, ASAPException, IOException;
 
     void subscribeBondReceivedListener(SharkBondReceivedListener listener);
 
