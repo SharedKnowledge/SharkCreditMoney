@@ -5,6 +5,7 @@ import net.sharksystem.asap.ASAPException;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Collection;
 
 import static net.sharksystem.creditmoney.TestConstants.*;
 
@@ -16,8 +17,7 @@ public class SharkCreditMoneyComponentTests {
     public static final String DAVID_FOLDER = THIS_ROOT_DIRECTORY + DAVID_NAME;
 
     private SharkCreditMoneyComponent setupComponent(SharkPeer sharkPeer) throws SharkException {
-
-        // certificate component required
+// certificate component required
         sharkPeer.addComponent(new SharkCertificateComponentFactory(), SharkCertificateComponent.class);
 
         // get certificate component
@@ -48,6 +48,8 @@ public class SharkCreditMoneyComponentTests {
         // Setup alice peer
         SharkTestPeerFS aliceSharkPeer = new SharkTestPeerFS(ALICE_ID, ALICE_FOLDER);
         SharkCreditMoneyComponent aliceComponent = this.setupComponent(aliceSharkPeer);
+        SharkBondReceivedListener aliceListener = new DummySharkBondReceivedListener();
+        aliceComponent.subscribeBondReceivedListener(aliceListener);
 
         // Start alice peer
         aliceSharkPeer.start();
@@ -56,31 +58,33 @@ public class SharkCreditMoneyComponentTests {
         SharkTestPeerFS.removeFolder(BOB_FOLDER);
         SharkTestPeerFS bobSharkPeer = new SharkTestPeerFS(BOB_NAME, BOB_FOLDER);
         SharkCreditMoneyComponent bobComponent = this.setupComponent(bobSharkPeer);
-
         SharkBondReceivedListener bobListener = new DummySharkBondReceivedListener();
         bobComponent.subscribeBondReceivedListener(bobListener);
 
         // Start bob peer
         bobSharkPeer.start();
 
-        ////////////////////////////////// bond specific tests start here
-        // Create a bond: Creditor Alice, debtor Bob of 20 "Euro"
-        SharkBond bondAliceBob = aliceComponent.createBond(ALICE_ID, BOB_ID, "EURO", 20);
-
-        bondAliceBob.setAllowedToChangeCreditor(true);
-        bondAliceBob.setAllowedToChangeDebtor(true);
-
         ///////////////////////////////// ASAP specific code - make an encounter Alice Bob
         aliceSharkPeer.getASAPTestPeerFS().startEncounter(7777, bobSharkPeer.getASAPTestPeerFS());
 
         // give them moment to exchange data
-        Thread.sleep(1000);
+        Thread.sleep(2000);
         //Thread.sleep(Long.MAX_VALUE);
         System.out.println("slept a moment");
 
-        // Bob must have a credit bond from Alice - he issued it by himself
+        ////////////////////////////////// bond specific tests start here
+        // Create a bond: Creditor Alice, debtor Bob of 100 "Euro"
+        aliceComponent.createBond(ALICE_ID, BOB_ID, BOND_UNIT, BOND_AMOUNT);
+        
+        // give them moment to exchange data
+        Thread.sleep(2000);
+        //Thread.sleep(Long.MAX_VALUE);
+        System.out.println("slept a moment");
 
+        Collection<SharkBond> bonds =  bobComponent.getBondsByDebtor(BOB_ID);
+        // Bob must have a credit bond from Alice - he issued it by himself
     }
+
     /**
      * Bob creates Bond as debtor. Alice accepts as creditor.
      */
@@ -91,23 +95,28 @@ public class SharkCreditMoneyComponentTests {
 
     private class DummySharkBondReceivedListener implements SharkBondReceivedListener {
         @Override
-        public void requestSignAsCreditor(SharkBond bond) throws ASAPException {
+        public void sharkBondReceived(SharkBond bond, CharSequence uri) throws ASAPException, IOException, SharkCreditMoneyException {
+            System.out.println("Message received: " + bond);
+        }
 
+        @Override
+        public void requestSignAsCreditor(SharkBond bond) throws ASAPException {
+            System.out.println("Message received: " + bond);
         }
 
         @Override
         public void requestSignAsDebtor(SharkBond bond) throws ASAPException {
-
+            System.out.println("Message received: " + bond);
         }
 
         @Override
         public void requestChangeCreditor(SharkBond bond) throws ASAPException {
-
+            System.out.println("Message received: " + bond);
         }
 
         @Override
         public void requestChangeDebtor(SharkBond bond) throws ASAPException {
-
+            System.out.println("Message received: " + bond);
         }
     }
 

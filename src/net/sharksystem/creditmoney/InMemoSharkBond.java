@@ -1,18 +1,12 @@
 package net.sharksystem.creditmoney;
 
-import net.sharksystem.asap.ASAPSecurityException;
-import net.sharksystem.asap.crypto.ASAPCryptoAlgorithms;
-import net.sharksystem.asap.crypto.ASAPKeyStore;
 import net.sharksystem.asap.persons.Person;
 import net.sharksystem.asap.utils.ASAPSerialization;
-
 import java.io.*;
-import java.sql.Timestamp;
 import java.util.Calendar;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.UUID;
 
-public class InMemoSharkBond implements SharkBond, AdminSharkBond, Serializable {
+public class InMemoSharkBond implements SharkBond, Serializable {
 
     /**
      * This constant is used to set the bond's expirationDate
@@ -24,11 +18,13 @@ public class InMemoSharkBond implements SharkBond, AdminSharkBond, Serializable 
     private final int amount;
     private final boolean allowedToChangeDebtor, allowedToChangeCreditor;
     private long expirationDate;
-    private Person debtor, creditor;
+    private CharSequence bondID;
+    private CharSequence debtorID, creditorID;
     private byte[] debtorSignature, creditorSignature;
 
 
     public InMemoSharkBond(CharSequence unitDescription, int amount) {
+        this.bondID = generateBondID();
         this.unitDescription = unitDescription;
         this.amount = amount;
         this.setExpirationDate();
@@ -43,8 +39,9 @@ public class InMemoSharkBond implements SharkBond, AdminSharkBond, Serializable 
     }
 
     public InMemoSharkBond(CharSequence creditorID, CharSequence debtorID, CharSequence unitDescription, int amount, boolean allowTransfer) {
-        this.creditor = new PersonImpl(creditorID);
-        this.debtor = new PersonImpl(debtorID);
+        this.bondID = generateBondID();
+        this.creditorID = creditorID;
+        this.debtorID = debtorID;
         this.unitDescription = unitDescription;
         this.amount = amount;
         this.setExpirationDate();
@@ -55,16 +52,21 @@ public class InMemoSharkBond implements SharkBond, AdminSharkBond, Serializable 
     }
 
     @Override
-    public int getBondID() {
-        return 0;
+    public CharSequence getBondID() {
+        return this.bondID;
     }
 
     /**
      * @return debtor of this bond
      */
     @Override
-    public Person getDebtor() {
-        return this.debtor;
+    public CharSequence getDebtorID() {
+        return this.debtorID;
+    }
+
+    @Override
+    public byte[] getDebtorSignature() {
+        return this.debtorSignature;
     }
 
     @Override
@@ -88,26 +90,28 @@ public class InMemoSharkBond implements SharkBond, AdminSharkBond, Serializable 
 
     /**
      * Set the debtor of this bond
-     * @param debtor
+     * @param debtorID
      */
-    public void setDebtor(Person debtor) throws SharkCreditMoneyException {
+    @Override
+    public void setDebtorID(CharSequence debtorID) throws SharkCreditMoneyException {
         if (this.allowedToChangeDebtor) {
-            this.debtor = debtor;
+            this.debtorID = debtorID;
         } else {
             throw new SharkCreditMoneyException("Method not allowed. The current bond's debtor can't be changed");
         }
-    }
-
-    public boolean isDebtorSignatureCorrect(ASAPKeyStore ASAPKeyStore) throws ASAPSecurityException {
-        return  this.isSignatureCorrect(this.debtor.getUUID().toString(), this.toString().getBytes(), this.debtorSignature, ASAPKeyStore);
     }
 
     /**
      * @return creditor of this bond
      */
     @Override
-    public Person getCreditor() {
-        return this.creditor;
+    public CharSequence getCreditorID() {
+        return this.creditorID;
+    }
+
+    @Override
+    public byte[] getCreditorSignature() {
+        return this.creditorSignature;
     }
 
     @Override
@@ -131,18 +135,25 @@ public class InMemoSharkBond implements SharkBond, AdminSharkBond, Serializable 
 
     /**
      * Set the creditor of this bond
-     * @param creditor
+     * @param creditorID
      */
-    public void setCreditor(Person creditor) throws SharkCreditMoneyException {
+    @Override
+    public void setCreditorID(CharSequence creditorID) throws SharkCreditMoneyException {
         if (this.allowedToChangeCreditor) {
-            this.creditor = creditor;
+            this.creditorID = creditorID;
         } else {
             throw new SharkCreditMoneyException("Method not allowed. The current bond's creditor can't be changed");
         }
     }
 
-    public boolean isCreditorSignatureCorrect(ASAPKeyStore ASAPKeyStore) throws ASAPSecurityException {
-        return  this.isSignatureCorrect(this.creditor.getUUID().toString(), this.toString().getBytes(), this.creditorSignature, ASAPKeyStore);
+    @Override
+    public void setCreditorSignature(byte[] signature) {
+        this.creditorSignature = signature;
+    }
+
+    @Override
+    public void setDebtorSignature(byte[] signature) {
+        this.debtorSignature = signature;
     }
 
     /**
@@ -179,96 +190,28 @@ public class InMemoSharkBond implements SharkBond, AdminSharkBond, Serializable 
         return false;
     }
 
+    @Override
     public void extendCreditBondValidity() {
         //TODO: extend bond's validity to one year.
         this.setExpirationDate(this.expirationDate);
     }
 
+    @Override
     public void annulBond() {
         this.setBondAsExpired();
-    }
-
-    public void signBondAsCreditor(ASAPKeyStore ASAPKeyStore) throws ASAPSecurityException {
-        this.creditorSignature = ASAPCryptoAlgorithms.sign(this.toString().getBytes(), ASAPKeyStore);
-    }
-
-    public void signBondAsDebtor(ASAPKeyStore ASAPKeyStore) throws ASAPSecurityException {
-        this.debtorSignature = ASAPCryptoAlgorithms.sign(this.toString().getBytes(), ASAPKeyStore);
     }
 
     @Override
     public String toString() {
         return "CreditBond{" +
-                "creditorID=" + creditor.getUUID() +
-                ", debtorID=" + debtor.getUUID() +
+                "creditorID=" + creditorID +
+                ", debtorID=" + debtorID +
                 ", unitDescription=" + unitDescription +
                 ", amount=" + amount +
                 ", expirationDate=" + expirationDate +
                 ", creditorSignature=" + creditorSignature +
                 ", debtorSignature=" + debtorSignature +
                 '}';
-    }
-
-    public static byte [] serializeCreditBond(InMemoSharkBond creditBond) {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream out = null;
-        byte[] serializedCreditBond = null;
-        try {
-            out = new ObjectOutputStream(bos);
-            out.writeObject(creditBond);
-            out.flush();
-            serializedCreditBond = bos.toByteArray();
-            ///// content
-            ASAPSerialization.writeByteArray(serializedCreditBond, bos);
-            ///// sender
-            ASAPSerialization.writeCharSequenceParameter(creditBond.creditor.getUUID(), bos);
-            ///// recipients
-            Set<CharSequence> recipients = new HashSet<>();
-            recipients.add(creditBond.debtor.getUUID());
-            ASAPSerialization.writeCharSequenceSetParameter(recipients, bos);
-            ///// timestamp
-            Timestamp creationTime = new Timestamp(System.currentTimeMillis());
-            String timestampString = creationTime.toString();
-            ASAPSerialization.writeCharSequenceParameter(timestampString, bos);
-
-            serializedCreditBond = bos.toByteArray();
-
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                bos.close();
-            } catch (IOException ex) {
-                // ignore close exception
-                serializedCreditBond = null;
-            }
-        }
-
-        return serializedCreditBond;
-    }
-
-    public static InMemoSharkBond deserializeCreditBond(byte[] serializedCreditBond) throws IOException {
-        ByteArrayInputStream bis = new ByteArrayInputStream(serializedCreditBond);
-        ObjectInput in = null;
-        InMemoSharkBond creditBond = null;
-        try {
-            in = new ObjectInputStream(bis);
-            creditBond = (InMemoSharkBond) in.readObject();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (in != null) {
-                    in.close();
-                }
-            } catch (IOException ex) {
-                // ignore close exception
-                creditBond = null;
-            }
-        }
-
-        return creditBond;
     }
 
     private void setExpirationDate() {
@@ -288,7 +231,8 @@ public class InMemoSharkBond implements SharkBond, AdminSharkBond, Serializable 
         this.expirationDate = until.getTimeInMillis();
     }
 
-    private boolean isSignatureCorrect(String signer, byte[] message, byte[] signature, ASAPKeyStore ASAPKeyStore) throws ASAPSecurityException {
-        return ASAPCryptoAlgorithms.verify(message, signature, signer, ASAPKeyStore);
+    private static CharSequence generateBondID() {
+        UUID uuid = UUID.randomUUID();
+        return uuid.toString();
     }
 }

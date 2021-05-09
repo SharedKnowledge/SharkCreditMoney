@@ -2,6 +2,9 @@ package net.sharksystem.creditmoney;
 
 public interface TestConstants {
     String ROOT_DIRECTORY = "playground/";
+    boolean BOND_ALLOW_TRANSFER = true;
+    String BOND_UNIT = "EURO";
+    int BOND_AMOUNT = 100;
     String ALICE_ID = "42";
     String ALICE_NAME = "Alice";
     String BOB_ID = "43";

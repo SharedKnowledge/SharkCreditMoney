@@ -22,6 +22,7 @@ public class UsageTests {
         SharkCertificateComponent certificateComponent =
                 (SharkCertificateComponent) aliceSharkPeer.getComponent(SharkCertificateComponent.class);
 
+
         // create money factory ;)
         SharkCreditMoneyComponentFactory scmcf = new SharkCreditMoneyComponentFactory(certificateComponent);
 

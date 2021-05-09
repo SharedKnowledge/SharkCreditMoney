@@ -1,16 +1,24 @@
 package net.sharksystem.creditmoney;
 
+import net.sharksystem.asap.ASAPSecurityException;
+import net.sharksystem.asap.crypto.ASAPCryptoAlgorithms;
+import net.sharksystem.asap.crypto.ASAPKeyStore;
+import java.io.IOException;
+
 class SharkBondHelper {
     /**
      * Sign this bond as debtor
      * @param bond
      * @throws SharkCreditMoneyException
      */
-    static void signAsDebtor(AdminSharkBond bond) throws SharkCreditMoneyException {
+    static void signAsDebtor(ASAPKeyStore ASAPKeyStore, SharkBond bond) throws SharkCreditMoneyException, IOException, ASAPSecurityException {
         // test: allowed to sign as debtor - is this peer debtor - do we have key from creditor etc. pp.
         // if not throw new SharkCreditMoneyException("reasons");
-
-        // else sign
+        if (!ASAPKeyStore.getOwner().equals(bond.getDebtorID())) {
+            throw new SharkCreditMoneyException("The provided keyStore owner (" + ASAPKeyStore.getOwner() + ") doesn't match the debtor's id (" + bond.getDebtorID() + ")");
+        } else {
+            bond.setDebtorSignature(signBond(ASAPKeyStore, bond));
+        }
     }
 
     /**
@@ -18,7 +26,14 @@ class SharkBondHelper {
      * @param bond
      * @throws SharkCreditMoneyException
      */
-    static void signAsCreditor(AdminSharkBond bond) throws SharkCreditMoneyException {
+    static void signAsCreditor(ASAPKeyStore ASAPKeyStore, SharkBond bond) throws SharkCreditMoneyException, IOException, ASAPSecurityException {
+        // test: allowed to sign as creditor - is this peer creditor - do we have key from debtor etc. pp.
+        // if not throw new SharkCreditMoneyException("reasons");
+        if (!ASAPKeyStore.getOwner().equals(bond.getCreditorID())) {
+            throw new SharkCreditMoneyException("The provided keyStore owner (" + ASAPKeyStore.getOwner() + ") doesn't match the creditor's id (" + bond.getDebtorID() + ")");
+        } else {
+            bond.setCreditorSignature(signBond(ASAPKeyStore, bond));
+        }
     }
 
     /**
@@ -26,7 +41,7 @@ class SharkBondHelper {
      * @param bond
      * @throws SharkCreditMoneyException
      */
-    static void acceptTransferCreditor(AdminSharkBond bond) throws SharkCreditMoneyException {
+    static void acceptTransferCreditor(SharkBond bond) throws SharkCreditMoneyException {
     }
 
     /**
@@ -34,7 +49,7 @@ class SharkBondHelper {
      * @param bond
      * @throws SharkCreditMoneyException
      */
-    static void acceptedTransferCreditor(AdminSharkBond bond) throws SharkCreditMoneyException {
+    static void acceptedTransferCreditor(SharkBond bond) throws SharkCreditMoneyException {
     }
 
     /**
@@ -42,7 +57,7 @@ class SharkBondHelper {
      * @param bond
      * @throws SharkCreditMoneyException
      */
-    static void acceptTransferDebtor(AdminSharkBond bond) throws SharkCreditMoneyException {
+    static void acceptTransferDebtor(SharkBond bond) throws SharkCreditMoneyException {
     }
 
     /**
@@ -50,7 +65,7 @@ class SharkBondHelper {
      * @param bond
      * @throws SharkCreditMoneyException
      */
-    static void acceptedTransferDebtor(AdminSharkBond bond) throws SharkCreditMoneyException {
+    static void acceptedTransferDebtor(SharkBond bond) throws SharkCreditMoneyException {
     }
 
     /**
@@ -59,7 +74,7 @@ class SharkBondHelper {
      * @param bond
      * @throws SharkCreditMoneyException
      */
-    static void signTransferBondAsDebtor(AdminSharkBond bond) throws SharkCreditMoneyException {
+    static void signTransferBondAsDebtor(SharkBond bond) throws SharkCreditMoneyException {
     }
 
     /**
@@ -67,7 +82,7 @@ class SharkBondHelper {
      * @param bond
      * @throws SharkCreditMoneyException
      */
-    static void signedTransferBondAsDebtor(AdminSharkBond bond) throws SharkCreditMoneyException {
+    static void signedTransferBondAsDebtor(SharkBond bond) throws SharkCreditMoneyException {
     }
 
     /**
@@ -76,7 +91,7 @@ class SharkBondHelper {
      * @param bond
      * @throws SharkCreditMoneyException
      */
-    static void signTransferBondAsCreditor(AdminSharkBond bond) throws SharkCreditMoneyException {
+    static void signTransferBondAsCreditor(SharkBond bond) throws SharkCreditMoneyException {
     }
 
     /**
@@ -84,12 +99,16 @@ class SharkBondHelper {
       * @param bond
      * @throws SharkCreditMoneyException
      */
-    static void signedTransferBondAsCreditor(AdminSharkBond bond) throws SharkCreditMoneyException {
+    static void signedTransferBondAsCreditor(SharkBond bond) throws SharkCreditMoneyException {
     }
 
-    static void finalizeTransferAsCreditor(AdminSharkBond bond) throws SharkCreditMoneyException {
+    static void finalizeTransferAsCreditor(SharkBond bond) throws SharkCreditMoneyException {
     }
 
-    static void finalizedTransferAsCreditor(AdminSharkBond bond) throws SharkCreditMoneyException {
+    static void finalizedTransferAsCreditor(SharkBond bond) throws SharkCreditMoneyException {
+    }
+
+    private static byte[] signBond(ASAPKeyStore ASAPKeyStore, SharkBond Bond) throws ASAPSecurityException, IOException {
+        return ASAPCryptoAlgorithms.sign(SharkBondSerializer.serializeCreditBond(Bond), ASAPKeyStore);
     }
 }
