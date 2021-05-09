@@ -150,13 +150,8 @@ public class SharkMoneyComponentImpl implements SharkCreditMoneyComponent, Shark
 
         try {
             bond = SharkBondSerializer.deserializeCreditBond(asapMessages.getMessage(0, true));
-        } catch (ASAPException e) {
-            e.printStackTrace();
-        }
-
-        try {
             this.sharkBondReceivedListener.sharkBondReceived(bond, asapMessages.getURI());
-        } catch (ASAPException | SharkCreditMoneyException e) {
+        } catch (ASAPException | SharkCreditMoneyException | NullPointerException e) {
             e.printStackTrace();
         }
     }
