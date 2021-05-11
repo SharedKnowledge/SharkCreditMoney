@@ -1,18 +1,18 @@
 package net.sharksystem.creditmoney;
 
-import net.sharksystem.SharkCertificateComponent;
 import net.sharksystem.SharkComponent;
 import net.sharksystem.SharkComponentFactory;
+import net.sharksystem.pki.SharkPKIComponent;
 
 public class SharkCreditMoneyComponentFactory implements SharkComponentFactory {
-    private final SharkCertificateComponent certificateComponent;
+    private final SharkPKIComponent pkiComponent;
 
-    public SharkCreditMoneyComponentFactory(SharkCertificateComponent certificateComponent) {
-        this.certificateComponent = certificateComponent;
+    public SharkCreditMoneyComponentFactory(SharkPKIComponent pkiComponent) {
+        this.pkiComponent = pkiComponent;
     }
 
     @Override
     public SharkComponent getComponent() {
-        return new SharkMoneyComponentImpl(certificateComponent);
+        return new SharkMoneyComponentImpl(pkiComponent);
     }
 }

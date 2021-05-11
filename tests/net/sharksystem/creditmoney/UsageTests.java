@@ -1,6 +1,8 @@
 package net.sharksystem.creditmoney;
 
 import net.sharksystem.*;
+import net.sharksystem.pki.SharkPKIComponent;
+import net.sharksystem.pki.SharkPKIComponentFactory;
 import org.junit.Test;
 
 import static net.sharksystem.creditmoney.TestConstants.*;
@@ -16,11 +18,11 @@ public class UsageTests {
         SharkTestPeerFS aliceSharkPeer = new SharkTestPeerFS(ALICE_ID, ALICE_FOLDER);
 
         // certificate component required
-        aliceSharkPeer.addComponent(new SharkCertificateComponentFactory(), SharkCertificateComponent.class);
+        aliceSharkPeer.addComponent(new SharkPKIComponentFactory(), SharkPKIComponent.class);
 
         // get certificate component
-        SharkCertificateComponent certificateComponent =
-                (SharkCertificateComponent) aliceSharkPeer.getComponent(SharkCertificateComponent.class);
+        SharkPKIComponent certificateComponent =
+                (SharkPKIComponent) aliceSharkPeer.getComponent(SharkPKIComponent.class);
 
 
         // create money factory ;)

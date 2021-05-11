@@ -1,9 +1,9 @@
 package net.sharksystem.creditmoney;
 
-import net.sharksystem.SharkCertificateComponent;
 import net.sharksystem.SharkException;
 import net.sharksystem.SharkUnknownBehaviourException;
 import net.sharksystem.asap.*;
+import net.sharksystem.pki.SharkPKIComponent;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -11,12 +11,12 @@ import java.util.Collection;
 import java.util.Iterator;
 
 public class SharkMoneyComponentImpl implements SharkCreditMoneyComponent, SharkBondReceivedListener, ASAPMessageReceivedListener {
-    private final SharkCertificateComponent certificateComponent;private ASAPPeer asapPeer;
+    private final SharkPKIComponent certificateComponent;private ASAPPeer asapPeer;
     private SharkBondReceivedListener sharkBondReceivedListener;
 
     private boolean allowTransfer = true;
 
-    public SharkMoneyComponentImpl(SharkCertificateComponent certificateComponent) {
+    public SharkMoneyComponentImpl(SharkPKIComponent certificateComponent) {
         this.certificateComponent = certificateComponent;
     }
 

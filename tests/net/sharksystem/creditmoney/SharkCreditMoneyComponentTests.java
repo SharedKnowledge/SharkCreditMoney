@@ -2,6 +2,8 @@ package net.sharksystem.creditmoney;
 
 import net.sharksystem.*;
 import net.sharksystem.asap.ASAPException;
+import net.sharksystem.pki.SharkPKIComponent;
+import net.sharksystem.pki.SharkPKIComponentFactory;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -17,12 +19,12 @@ public class SharkCreditMoneyComponentTests {
     public static final String DAVID_FOLDER = THIS_ROOT_DIRECTORY + DAVID_NAME;
 
     private SharkCreditMoneyComponent setupComponent(SharkPeer sharkPeer) throws SharkException {
-// certificate component required
-        sharkPeer.addComponent(new SharkCertificateComponentFactory(), SharkCertificateComponent.class);
+    // certificate component required
+        sharkPeer.addComponent(new SharkPKIComponentFactory(), SharkPKIComponent.class);
 
         // get certificate component
-        SharkCertificateComponent certificateComponent =
-                (SharkCertificateComponent) sharkPeer.getComponent(SharkCertificateComponent.class);
+        SharkPKIComponent certificateComponent =
+                (SharkPKIComponent) sharkPeer.getComponent(SharkPKIComponent.class);
 
         // create money factory ;)
         SharkCreditMoneyComponentFactory scmcf = new SharkCreditMoneyComponentFactory(certificateComponent);
