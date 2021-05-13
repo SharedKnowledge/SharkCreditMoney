@@ -109,6 +109,6 @@ class SharkBondHelper {
     }
 
     private static byte[] signBond(ASAPKeyStore ASAPKeyStore, SharkBond Bond) throws ASAPSecurityException, IOException {
-        return ASAPCryptoAlgorithms.sign(SharkBondSerializer.serializeCreditBond(Bond), ASAPKeyStore);
+        return ASAPCryptoAlgorithms.sign(SharkBondSerializer.serializeCreditBond(Bond, ASAPKeyStore), ASAPKeyStore);
     }
 }

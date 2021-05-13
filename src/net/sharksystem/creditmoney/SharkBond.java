@@ -19,6 +19,9 @@ import java.io.IOException;
  *
  */
 public interface SharkBond {
+    int SIGNED_MASK = 0x1;
+    int ENCRYPTED_MASK = 0x2;
+
     /**
      * There is an id that makes any bond unique.
      * @return unique permanent id of this bond.

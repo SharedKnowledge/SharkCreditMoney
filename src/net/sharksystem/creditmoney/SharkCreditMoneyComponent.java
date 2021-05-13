@@ -155,9 +155,16 @@ public interface SharkCreditMoneyComponent extends SharkComponent {
     String SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_CREDITOR_URI = "sharkMoney://signAsCreditor";
     String SHARK_CREDIT_MONEY_SIGNED_BOND_URI = "sharkMoney://signedBond";
     String SHARK_CREDIT_MONEY_ANNUL_BOND_URI = "sharkMoney://annulBond";
+    // Channel's names
+    String SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_DEBTOR_NAME = "signAsDebtor";
+    String SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_CREDITOR_NAME = "signAsCreditor";
+    String SHARK_CREDIT_MONEY_SIGNED_BOND_NAME = "signedBond";
+    String SHARK_CREDIT_MONEY_ANNUL_BOND_NAME = "annulBond";
 
     /** allow transfer of debtor or creditor - default: yes / true */
     String BEHAVIOUR_SHARK_MONEY_ALLOW_TRANSFER = "SHARK_MONEY_BEHAVIOUR_ALLOW_TRANSFER";
+
+    void initDefaultChannels() throws IOException, SharkCreditMoneyException;
 
     /**
      * Create a bond. It is a decentralized system. Bond creation requires interaction of several peers. This
@@ -174,6 +181,13 @@ public interface SharkCreditMoneyComponent extends SharkComponent {
 
     Collection<SharkBond> getBondsByCreditorAndDebtor(CharSequence creditorID, CharSequence debtorID) throws SharkCreditMoneyException;
 
+    // Channel handling
+    void createChannel(CharSequence uri, CharSequence name) throws SharkCreditMoneyException, IOException;
+
+    void removeChannel(CharSequence uri) throws SharkCreditMoneyException;
+
+    void removeAllChannels() throws SharkCreditMoneyException;
+
     /**
      * The former debtor asks to replace it with new one.
      * @param bond
@@ -186,5 +200,5 @@ public interface SharkCreditMoneyComponent extends SharkComponent {
 
     void subscribeBondReceivedListener(SharkBondReceivedListener listener);
 
-    void annulBond(SharkBond bond) throws SharkCreditMoneyException, ASAPException;
+    void annulBond(SharkBond bond) throws SharkCreditMoneyException, ASAPException, IOException;
 }
