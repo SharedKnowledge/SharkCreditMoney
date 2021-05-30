@@ -150,9 +150,22 @@ public class SharkCreditMoneyComponentTests {
         byte[] message = channel.getMessages().getMessage(0, true);
         Assert.assertNotNull(message);
 
-        SharkBond bond = SharkBondSerializer.deserializeCreditBond(message, (SharkPKIComponent) this.bobPeer.getComponent(SharkPKIComponent.class));
-        Collection<SharkBond> bonds =  this.bobComponentImpl.getBondsByDebtor(BOB_ID);
+        SharkBond sentBond = SharkBondSerializer.deserializeCreditBond(message, (SharkPKIComponent) this.bobPeer.getComponent(SharkPKIComponent.class));
+
+        List<SharkBond> bonds = (List<SharkBond>) this.bobComponentImpl.getBondsByDebtor(BOB_ID);
         // Bob must have a credit bond from Alice - he issued it by himself
+
+        // Check if the correct bond was received
+        Assert.assertFalse(bonds.isEmpty());
+        SharkBond receivedBond = bonds.get(0);
+        Assert.assertEquals(sentBond.getBondID(), receivedBond.getBondID());
+        Assert.assertEquals(sentBond.getAmount(), receivedBond.getAmount());
+        Assert.assertEquals(sentBond.getCreditorID(), receivedBond.getCreditorID());
+        Assert.assertEquals(ALICE_ID, receivedBond.getCreditorID());
+        Assert.assertEquals(sentBond.getDebtorID(), receivedBond.getDebtorID());
+        Assert.assertEquals(BOB_ID, receivedBond.getDebtorID());
+        Assert.assertEquals(sentBond.unitDescription(), receivedBond.unitDescription());
+        Assert.assertEquals(BOND_UNIT, receivedBond.unitDescription());
     }
 
     /**
@@ -204,9 +217,17 @@ public class SharkCreditMoneyComponentTests {
     /**
      * Bond (Alice (creditor), bob (deptor). Alice wants to change creditor to Clara.
      */
+    @Test
+    public void aliceWantBondCreditorTransferToClara() {
+        // TODO
+    }
 
     /**
      * Bond (Alice (creditor), bob (deptor). Bob wants to change creditor to Clara.
      */
+    @Test
+    public void bobWantBondDebtorTransferToClara() {
+        // TODO
+    }
 
 }
