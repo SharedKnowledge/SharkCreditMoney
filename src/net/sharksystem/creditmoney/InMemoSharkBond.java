@@ -7,7 +7,6 @@ import java.util.Calendar;
 import java.util.UUID;
 
 public class InMemoSharkBond implements SharkBond, Serializable {
-
     /**
      * This constant is used to set the bond's expirationDate
      * It can also be set to the validity of the ASAP's certificate as follow:
@@ -16,29 +15,29 @@ public class InMemoSharkBond implements SharkBond, Serializable {
     public static final int DEFAULT_CREDIT_BOND_VALIDITY_IN_YEARS = 1;
     private final CharSequence unitDescription;
     private final int amount;
-    private final boolean allowedToChangeDebtor, allowedToChangeCreditor;
+    private boolean allowedToChangeDebtor, allowedToChangeCreditor;
     private long expirationDate;
     private CharSequence bondID;
     private CharSequence debtorID, creditorID;
     private byte[] debtorSignature, creditorSignature;
 
+    public InMemoSharkBond(SharkBond bond) {
+        this(bond.getCreditorID(), bond.getDebtorID(), bond.unitDescription(), bond.getAmount(), bond.allowedToChangeCreditor(), bond.allowedToChangeDebtor());
+    }
 
     public InMemoSharkBond(CharSequence unitDescription, int amount) {
-        this.bondID = generateBondID();
-        this.unitDescription = unitDescription;
-        this.amount = amount;
-        this.setExpirationDate();
-        this.debtorSignature = null;
-        this.creditorSignature = null;
-        this.allowedToChangeDebtor = true;
-        this.allowedToChangeCreditor = true;
+        this(null, null, unitDescription, amount, false);
     }
 
     public InMemoSharkBond(CharSequence creditorID, CharSequence debtorID, CharSequence unitDescription, int amount) {
-        this(creditorID, debtorID, unitDescription, amount,true);
+        this(creditorID, debtorID, unitDescription, amount,false);
     }
 
     public InMemoSharkBond(CharSequence creditorID, CharSequence debtorID, CharSequence unitDescription, int amount, boolean allowTransfer) {
+        this(creditorID, debtorID, unitDescription, amount, allowTransfer, allowTransfer);
+    }
+
+    public InMemoSharkBond(CharSequence creditorID, CharSequence debtorID, CharSequence unitDescription, int amount, boolean allowedToChangeCreditor, boolean allowedToChangeDebtor) {
         this.bondID = generateBondID();
         this.creditorID = creditorID;
         this.debtorID = debtorID;
@@ -47,8 +46,8 @@ public class InMemoSharkBond implements SharkBond, Serializable {
         this.setExpirationDate();
         this.debtorSignature = null;
         this.creditorSignature = null;
-        this.allowedToChangeDebtor = allowTransfer;
-        this.allowedToChangeCreditor = allowTransfer;
+        this.allowedToChangeCreditor = allowedToChangeCreditor;
+        this.allowedToChangeDebtor = allowedToChangeDebtor;
     }
 
     @Override
@@ -70,22 +69,13 @@ public class InMemoSharkBond implements SharkBond, Serializable {
     }
 
     @Override
-    public boolean signedByDebtor() {
-        if (this.debtorSignature == null) {
-            return false;
-        } else {
-            return true;
-        }
-    }
-
-    @Override
     public boolean allowedToChangeDebtor() {
         return this.allowedToChangeDebtor;
     }
 
     @Override
     public void setAllowedToChangeDebtor(boolean on) throws SharkCreditMoneyException {
-
+        this.allowedToChangeDebtor = on;
     }
 
     /**
@@ -115,22 +105,13 @@ public class InMemoSharkBond implements SharkBond, Serializable {
     }
 
     @Override
-    public boolean signedByCreditor() {
-        if (this.creditorSignature == null) {
-            return false;
-        } else {
-            return true;
-        }
-    }
-
-    @Override
     public boolean allowedToChangeCreditor() {
         return this.allowedToChangeCreditor;
     }
 
     @Override
     public void setAllowedToChangeCreditor(boolean on) throws SharkCreditMoneyException {
-
+        this.allowedToChangeCreditor = on;
     }
 
     /**
@@ -167,11 +148,6 @@ public class InMemoSharkBond implements SharkBond, Serializable {
         return this.unitDescription;
     }
 
-    @Override
-    public void setUnitDescription(CharSequence description) {
-
-    }
-
     /**
      * @return amounts of whatever unit you defined.
      */
@@ -197,11 +173,6 @@ public class InMemoSharkBond implements SharkBond, Serializable {
     }
 
     @Override
-    public void annulBond() {
-        this.setBondAsExpired();
-    }
-
-    @Override
     public String toString() {
         return "CreditBond{" +
                 "creditorID=" + creditorID +
@@ -214,6 +185,12 @@ public class InMemoSharkBond implements SharkBond, Serializable {
                 '}';
     }
 
+    @Override
+    public void setBondAsExpired() {
+        Calendar until = Calendar.getInstance();
+        this.expirationDate = until.getTimeInMillis();
+    }
+
     private void setExpirationDate() {
         Calendar until = Calendar.getInstance();
         this.setExpirationDate(until.getTimeInMillis());
@@ -223,11 +200,6 @@ public class InMemoSharkBond implements SharkBond, Serializable {
         Calendar until = Calendar.getInstance();
         until.setTimeInMillis(creationDate);
         until.add(Calendar.YEAR, DEFAULT_CREDIT_BOND_VALIDITY_IN_YEARS);
-        this.expirationDate = until.getTimeInMillis();
-    }
-
-    private void setBondAsExpired() {
-        Calendar until = Calendar.getInstance();
         this.expirationDate = until.getTimeInMillis();
     }
 

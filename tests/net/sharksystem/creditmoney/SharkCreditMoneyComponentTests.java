@@ -164,9 +164,15 @@ public class SharkCreditMoneyComponentTests {
     }
 
     private class DummySharkBondReceivedListener implements SharkBondReceivedListener {
+        private final SharkCreditMoneyComponent sharkCreditMoneyComponent;
+
+        public DummySharkBondReceivedListener(SharkCreditMoneyComponent sharkCreditMoneyComponent) {
+            this.sharkCreditMoneyComponent = sharkCreditMoneyComponent;
+        }
+
         @Override
-        public void sharkBondReceived(SharkBond bond, CharSequence uri) throws ASAPException, IOException, SharkCreditMoneyException {
-            System.out.println("Message received: " + bond);
+        public void sharkBondReceived(CharSequence uri) throws ASAPException, IOException, SharkCreditMoneyException {
+
         }
 
         @Override
@@ -187,6 +193,11 @@ public class SharkCreditMoneyComponentTests {
         @Override
         public void requestChangeDebtor(SharkBond bond) throws ASAPException {
             System.out.println("Message received: " + bond);
+        }
+
+        @Override
+        public void annulBond(SharkBond bond) throws SharkCreditMoneyException, ASAPException, IOException {
+
         }
     }
 

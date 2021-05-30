@@ -3,6 +3,9 @@ package net.sharksystem.creditmoney;
 import net.sharksystem.ASAPFormats;
 import net.sharksystem.SharkComponent;
 import net.sharksystem.asap.ASAPException;
+import net.sharksystem.asap.ASAPPeer;
+import net.sharksystem.asap.ASAPStorage;
+import net.sharksystem.pki.SharkPKIComponent;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -153,18 +156,13 @@ public interface SharkCreditMoneyComponent extends SharkComponent {
     String SHARK_CREDIT_MONEY_FORMAT = "shark/money";
     String SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_DEBTOR_URI = "sharkMoney://signAsDebtor";
     String SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_CREDITOR_URI = "sharkMoney://signAsCreditor";
+    String SHARK_CREDIT_MONEY_ASKED_TO_CHANGE_DEBTOR_URI = "sharkMoney://changeDebtor";
+    String SHARK_CREDIT_MONEY_ASKED_TO_CHANGE_CREDITOR_URI = "sharkMoney://changeCreditor";
     String SHARK_CREDIT_MONEY_SIGNED_BOND_URI = "sharkMoney://signedBond";
     String SHARK_CREDIT_MONEY_ANNUL_BOND_URI = "sharkMoney://annulBond";
-    // Channel's names
-    String SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_DEBTOR_NAME = "signAsDebtor";
-    String SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_CREDITOR_NAME = "signAsCreditor";
-    String SHARK_CREDIT_MONEY_SIGNED_BOND_NAME = "signedBond";
-    String SHARK_CREDIT_MONEY_ANNUL_BOND_NAME = "annulBond";
 
     /** allow transfer of debtor or creditor - default: yes / true */
     String BEHAVIOUR_SHARK_MONEY_ALLOW_TRANSFER = "SHARK_MONEY_BEHAVIOUR_ALLOW_TRANSFER";
-
-    void initDefaultChannels() throws IOException, SharkCreditMoneyException;
 
     /**
      * Create a bond. It is a decentralized system. Bond creation requires interaction of several peers. This
@@ -188,6 +186,8 @@ public interface SharkCreditMoneyComponent extends SharkComponent {
 
     void removeAllChannels() throws SharkCreditMoneyException;
 
+    SharkPKIComponent getSharkPKI();
+
     /**
      * The former debtor asks to replace it with new one.
      * @param bond
@@ -200,5 +200,7 @@ public interface SharkCreditMoneyComponent extends SharkComponent {
 
     void subscribeBondReceivedListener(SharkBondReceivedListener listener);
 
-    void annulBond(SharkBond bond) throws SharkCreditMoneyException, ASAPException, IOException;
+    ASAPPeer getASAPPeer();
+
+    ASAPStorage getASAPStorage() throws IOException, ASAPException;
 }

@@ -33,49 +33,40 @@ public interface SharkBond {
      */
     CharSequence getDebtorID();
 
-    byte[] getDebtorSignature();
-
-    boolean signedByDebtor();
-    boolean allowedToChangeDebtor();
-    void setAllowedToChangeDebtor(boolean on) throws SharkCreditMoneyException;
-
-    void setDebtorID(CharSequence debtorID) throws SharkCreditMoneyException;
-
     /**
      * @return creditor of this bond
      */
     CharSequence getCreditorID();
 
+    byte[] getDebtorSignature();
     byte[] getCreditorSignature();
 
-    boolean signedByCreditor();
-    boolean allowedToChangeCreditor();
-    void setAllowedToChangeCreditor(boolean on) throws SharkCreditMoneyException;
-
+    void setDebtorID(CharSequence debtorID) throws SharkCreditMoneyException;
     void setCreditorID(CharSequence creditorID) throws SharkCreditMoneyException;
 
+    boolean allowedToChangeDebtor();
+    boolean allowedToChangeCreditor();
+
+    void setAllowedToChangeDebtor(boolean on) throws SharkCreditMoneyException;
+    void setAllowedToChangeCreditor(boolean on) throws SharkCreditMoneyException;
+
     void setCreditorSignature(byte[] signature);
-
     void setDebtorSignature(byte[] signature);
-
-    /**
-     * A bond defines a kind of depth. Each bond can have its own unit, e.g. bar of gold-pressed latinum, a favour,
-     * a cigarette was a currency after WW2, etc. pp.
-     * @return unit you defined
-     */
-    CharSequence unitDescription();
-    void setUnitDescription(CharSequence description);
 
     /**
      *
      * @return amounts of whatever unit you defined.
      */
     int getAmount();
-
     long getExpirationDate();
+    /**
+     * A bond defines a kind of depth. Each bond can have its own unit, e.g. bar of gold-pressed latinum, a favour,
+     * a cigarette was a currency after WW2, etc. pp.
+     * @return unit you defined
+     */
+    CharSequence unitDescription();
     boolean isAnnulled();
 
     void extendCreditBondValidity();
-
-    void annulBond();
+    void setBondAsExpired();
 }

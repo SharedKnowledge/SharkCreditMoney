@@ -4,7 +4,6 @@ import net.sharksystem.asap.ASAPException;
 import net.sharksystem.asap.ASAPSecurityException;
 import net.sharksystem.asap.crypto.ASAPCryptoAlgorithms;
 import net.sharksystem.asap.crypto.ASAPKeyStore;
-import net.sharksystem.asap.pki.ASAPKeyStorage;
 import net.sharksystem.asap.utils.ASAPSerialization;
 
 import java.io.*;
@@ -13,57 +12,15 @@ import java.util.HashSet;
 import java.util.Set;
 
 class SharkBondSerializer {
-    static byte [] sharkBondToByteArray(SharkBond creditBond) {
-        byte[] byteArray = null;
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream out = null;
-        try {
-            out = new ObjectOutputStream(bos);
-            out.writeObject(creditBond);
-            out.flush();
-            byteArray = bos.toByteArray();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                bos.close();
-            } catch (IOException ex) {
-                // ignore close exception
-            }
-        }
 
-        return byteArray;
-    }
-
-    static SharkBond byteArrayToSharkBond(byte [] byteArray) {
-        SharkBond bond = null;
-        ByteArrayInputStream bis = new ByteArrayInputStream(byteArray);
-        ObjectInput in = null;
-        try {
-            in = new ObjectInputStream(bis);
-            bond = (SharkBond) in.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (in != null) {
-                    in.close();
-                }
-            } catch (IOException ex) {
-                // ignore close exception
-            }
-        }
-
-        return bond;
-    }
-
-    static byte [] serializeCreditBond(SharkBond creditBond, ASAPKeyStore ASAPKeyStore) throws ASAPSecurityException, IOException {
+    static byte [] serializeCreditBond(SharkBond creditBond, ASAPKeyStore asapKeyStore) throws ASAPSecurityException, IOException {
         // recipients
         Set<CharSequence> recipients = new HashSet<>();
         recipients.add(creditBond.getDebtorID());
 
         // Convert bond to byteArray
-        byte[] content = sharkBondToByteArray(creditBond);
+        // use excludeSignature to exclude or include previous signatures (that can be helpful for a late verification of the the bond signatures)
+        byte[] content = sharkBondToByteArray(creditBond, true);
         /////////// produce serialized structure
 
         // merge content, sender and recipient
@@ -83,7 +40,7 @@ class SharkBondSerializer {
 
         byte flags = 0;
         // Sign SN Message
-        byte[] signature = ASAPCryptoAlgorithms.sign(content, ASAPKeyStore);
+        byte[] signature = ASAPCryptoAlgorithms.sign(content, asapKeyStore);
         baos = new ByteArrayOutputStream();
         ASAPSerialization.writeByteArray(content, baos); // message has three parts: content, sender, receiver
         // append signature
@@ -96,7 +53,7 @@ class SharkBondSerializer {
         content = ASAPCryptoAlgorithms.produceEncryptedMessagePackage(
                 content,
                 recipients.iterator().next(), // already checked if one and only one is recipient
-                ASAPKeyStore);
+                asapKeyStore);
         flags += SharkBond.ENCRYPTED_MASK;
 
         // serialize SN message
@@ -107,7 +64,7 @@ class SharkBondSerializer {
         return baos.toByteArray();
     }
 
-    static SharkBond deserializeCreditBond(byte[] serializedCreditBond, ASAPKeyStore ASAPKeyStore) throws IOException, ASAPException {
+    static SharkBond deserializeCreditBond(byte[] serializedCreditBond, ASAPKeyStore asapKeyStore) throws IOException, ASAPException {
         ByteArrayInputStream bais = new ByteArrayInputStream(serializedCreditBond);
         byte flags = ASAPSerialization.readByte(bais);
         byte[] tmpMessage = ASAPSerialization.readByteArray(bais);
@@ -122,7 +79,7 @@ class SharkBondSerializer {
 
         // replace message with decrypted message
         tmpMessage = ASAPCryptoAlgorithms.decryptPackage(
-                encryptedMessagePackage, ASAPKeyStore);
+                encryptedMessagePackage, asapKeyStore);
 
         byte[] signature = null;
         byte[] signedMessage = null;
@@ -151,7 +108,7 @@ class SharkBondSerializer {
         if (signature != null) {
             try {
                 verified = ASAPCryptoAlgorithms.verify(
-                        signedMessage, signature, snSender, ASAPKeyStore);
+                        signedMessage, signature, snSender, asapKeyStore);
             } catch (ASAPSecurityException e) {
                 // verified definitely false
                 verified = false;
@@ -161,4 +118,62 @@ class SharkBondSerializer {
         // replace special sn symbols
         return byteArrayToSharkBond(snMessage);
     }
+
+    static byte [] sharkBondToByteArray(SharkBond creditBond) {
+        byte[] byteArray = null;
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutputStream out = null;
+        try {
+            out = new ObjectOutputStream(bos);
+            out.writeObject(creditBond);
+            out.flush();
+            byteArray = bos.toByteArray();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                bos.close();
+            } catch (IOException ex) {
+                // ignore close exception
+            }
+        }
+
+        return byteArray;
+    }
+
+    static byte [] sharkBondToByteArray(SharkBond creditBond, boolean excludeSignature) {
+
+        // if excludeSignature is true set creditor and debtor signature to null before signing
+        if (excludeSignature) {
+            SharkBond creditBondCopy = new InMemoSharkBond(creditBond);
+            creditBondCopy.setCreditorSignature(null);
+            creditBondCopy.setDebtorSignature(null);
+            return sharkBondToByteArray(creditBondCopy);
+        }
+
+        return sharkBondToByteArray(creditBond);
+    }
+
+    static SharkBond byteArrayToSharkBond(byte [] byteArray) {
+        SharkBond bond = null;
+        ByteArrayInputStream bis = new ByteArrayInputStream(byteArray);
+        ObjectInput in = null;
+        try {
+            in = new ObjectInputStream(bis);
+            bond = (SharkBond) in.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (in != null) {
+                    in.close();
+                }
+            } catch (IOException ex) {
+                // ignore close exception
+            }
+        }
+
+        return bond;
+    }
+
 }
