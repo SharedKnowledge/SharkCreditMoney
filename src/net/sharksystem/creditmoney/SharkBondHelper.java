@@ -65,7 +65,6 @@ class SharkBondHelper {
      */
     static void acceptedTransferCreditor(ASAPKeyStore ASAPKeyStore, SharkBond bond) throws SharkCreditMoneyException {
         // Once the request to transfer a bond to a new creditor is accepted the new creditor will be recorded and the bond will be signed
-        //
         
     }
 
@@ -103,7 +102,6 @@ class SharkBondHelper {
      * @throws SharkCreditMoneyException
      */
     static void signTransferBondAsDebtor(SharkBond bond) throws SharkCreditMoneyException {
-
     }
 
     /**

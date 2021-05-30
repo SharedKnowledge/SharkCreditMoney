@@ -6,33 +6,33 @@ import net.sharksystem.asap.listenermanager.GenericNotifier;
 
 import java.io.IOException;
 
-public class SharkBondReceivedListenerManager extends GenericListenerImplementation<SharkBondReceivedListener> {
-    public void addSharkBondReceivedListener(SharkBondReceivedListener listener) {
+public class SharkBondReceivedListenerManager extends GenericListenerImplementation<SharkBondsReceivedListener> {
+    public void addSharkBondReceivedListener(SharkBondsReceivedListener listener) {
         this.addListener(listener);
     }
 
-    public void removeSharkBondReceivedListener(SharkBondReceivedListener listener) {
+    public void removeSharkBondReceivedListener(SharkBondsReceivedListener listener) {
         this.removeListener(listener);
     }
 
     protected void notifySharkBondReceivedListener(
             CharSequence uri) {
 
-        SharkBondReceivedNotifier sharkBondReceivedNotifier =
-                new SharkBondReceivedNotifier(uri);
+        SharkBondsReceivedNotifier sharkBondsReceivedNotifier =
+                new SharkBondsReceivedNotifier(uri);
 
-        this.notifyAll(sharkBondReceivedNotifier, false);
+        this.notifyAll(sharkBondsReceivedNotifier, false);
     }
 
-    private class SharkBondReceivedNotifier implements GenericNotifier<SharkBondReceivedListener> {
+    private class SharkBondsReceivedNotifier implements GenericNotifier<SharkBondsReceivedListener> {
         private final CharSequence uri;
 
-        public SharkBondReceivedNotifier(CharSequence uri) {
+        public SharkBondsReceivedNotifier(CharSequence uri) {
             this.uri = uri;
         }
 
         @Override
-        public void doNotify(SharkBondReceivedListener sharkMessagesReceivedListener) {
+        public void doNotify(SharkBondsReceivedListener sharkMessagesReceivedListener) {
             try {
                 sharkMessagesReceivedListener.sharkBondReceived(this.uri);
             } catch (ASAPException | IOException | SharkCreditMoneyException e) {

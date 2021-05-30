@@ -5,6 +5,7 @@ import net.sharksystem.asap.ASAPChannel;
 import net.sharksystem.asap.ASAPException;
 import net.sharksystem.asap.ASAPSecurityException;
 import net.sharksystem.asap.ASAPStorage;
+import net.sharksystem.asap.crypto.ASAPKeyStore;
 import net.sharksystem.asap.pki.ASAPCertificate;
 import net.sharksystem.asap.pki.CredentialMessageInMemo;
 import net.sharksystem.pki.SharkPKIComponent;
@@ -94,9 +95,100 @@ public class SharkCreditMoneyComponentTests {
         this.aliceComponent = (SharkCreditMoneyComponent) this.alicePeer.getComponent(SharkCreditMoneyComponent.class);
         this.bobComponent = (SharkCreditMoneyComponent) this.bobPeer.getComponent(SharkCreditMoneyComponent.class);
 
+        // Add SharkBondReceivedListener Implementation
+        SharkBondsReceivedListener aliceListener = new DummySharkBondReceivedListener(this.aliceComponent);
+        this.aliceComponent.subscribeBondReceivedListener(aliceListener);
+
+        SharkBondsReceivedListener bobListener = new DummySharkBondReceivedListener(this.bobComponent);
+        this.bobComponent.subscribeBondReceivedListener(bobListener);
+
         // set up backdoors
         this.aliceComponentImpl = (SharkMoneyComponentImpl) this.aliceComponent;
         this.bobComponentImpl = (SharkMoneyComponentImpl) this.bobComponent;
+    }
+
+    private class DummySharkBondReceivedListener implements SharkBondsReceivedListener {
+        private final SharkCreditMoneyComponent sharkCreditMoneyComponent;
+        private SharkBond creditBond;
+
+        public DummySharkBondReceivedListener(SharkCreditMoneyComponent sharkCreditMoneyComponent) {
+            this.sharkCreditMoneyComponent = sharkCreditMoneyComponent;
+        }
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //                                          act on received bonds                                       //
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////
+        @Override
+        public void sharkBondReceived(CharSequence uri) throws ASAPException, IOException, SharkCreditMoneyException {
+            ASAPStorage asapStorage = this.sharkCreditMoneyComponent.getASAPStorage();
+            byte[] asapMessage = asapStorage.getChannel(uri).getMessages(false).getMessage(0, true);
+
+            this.creditBond = SharkBondSerializer.deserializeCreditBond(asapMessage, this.sharkCreditMoneyComponent.getSharkPKI());
+
+            switch(uri.toString()) {
+                case SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_CREDITOR_URI:
+                    SharkBondHelper.signAsCreditor(this.sharkCreditMoneyComponent.getSharkPKI(), this.creditBond);
+                    this.sharkCreditMoneyComponent.getASAPPeer().sendASAPMessage(SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_FORMAT, SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_SIGNED_BOND_URI, SharkBondSerializer.serializeCreditBond(this.creditBond, this.sharkCreditMoneyComponent.getSharkPKI(), false));
+                    break;
+                case SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_DEBTOR_URI:
+                    try {
+                        SharkBondHelper.signAsDebtor((SharkPKIComponent) bobPeer.getComponent(SharkPKIComponent.class), this.creditBond);
+                    } catch (SharkException e) {
+                        e.printStackTrace();
+                    }
+                    this.sharkCreditMoneyComponent.getASAPPeer().sendASAPMessage(SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_FORMAT, SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_SIGNED_BOND_URI, SharkBondSerializer.serializeCreditBond(this.creditBond, this.sharkCreditMoneyComponent.getSharkPKI(), false));
+                    ///////////////////////////////// ASAP specific code - make an encounter Bob Alice
+                    try {
+                        runEncounter(bobPeer, alicePeer, true);
+                    } catch (SharkException e) {
+                        e.printStackTrace();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                case SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_ASKED_TO_CHANGE_CREDITOR_URI:
+                    break;
+                case SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_ASKED_TO_CHANGE_DEBTOR_URI:
+                    this.requestChangeDebtor(creditBond);
+                    break;
+                case SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_SIGNED_BOND_URI:
+                    /* TODO */
+                    System.out.println("test");
+                    break;
+                case SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_ANNUL_BOND_URI:
+                    this.annulBond(creditBond);
+                    break;
+                default: // unknown URI
+            }
+        }
+
+
+        @Override
+        public void requestSignAsCreditor(SharkBond bond) throws ASAPException, IOException, SharkCreditMoneyException {
+
+        }
+
+        @Override
+        public void requestSignAsDebtor(SharkBond bond) throws ASAPException, IOException, SharkCreditMoneyException {
+
+        }
+
+        @Override
+        public void requestChangeCreditor(SharkBond bond) throws ASAPException {
+
+        }
+
+        @Override
+        public void requestChangeDebtor(SharkBond bond) throws ASAPException {
+
+        }
+
+        @Override
+        public void annulBond(SharkBond bond) throws ASAPException, IOException {
+            InMemoSharkBond creditBond = (InMemoSharkBond) bond;
+            SharkBondHelper.annulBond(creditBond);
+            this.sharkCreditMoneyComponent.getASAPPeer().sendASAPMessage(SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_FORMAT, SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_ANNUL_BOND_URI, SharkBondSerializer.serializeCreditBond(creditBond, this.sharkCreditMoneyComponent.getSharkPKI()));
+        }
     }
 
     public void runEncounter(SharkTestPeerFS leftPeer, SharkTestPeerFS rightPeer, boolean stop)
@@ -142,30 +234,45 @@ public class SharkCreditMoneyComponentTests {
         // Sender list can't be null
         Assert.assertNotNull(bobSenderList);
         Assert.assertFalse(bobSenderList.isEmpty());
-        CharSequence senderID = bobSenderList.get(0);
-        Assert.assertTrue(alicePeer.samePeer(senderID));
+        CharSequence aliceSenderID = bobSenderList.get(0);
+        Assert.assertTrue(this.alicePeer.samePeer(aliceSenderID));
 
-        ASAPStorage senderIncomingStorage = bobAsapStorage.getExistingIncomingStorage(ALICE_ID);
-        ASAPChannel channel = senderIncomingStorage.getChannel(SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_DEBTOR_URI);
-        byte[] message = channel.getMessages().getMessage(0, true);
-        Assert.assertNotNull(message);
+        ASAPStorage senderIncomingStorageForBob = bobAsapStorage.getExistingIncomingStorage(ALICE_ID);
+        ASAPChannel channelForBob = senderIncomingStorageForBob.getChannel(SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_DEBTOR_URI);
+        byte[] messageFromAlice = channelForBob.getMessages().getMessage(0, true);
+        Assert.assertNotNull(messageFromAlice);
 
-        SharkBond sentBond = SharkBondSerializer.deserializeCreditBond(message, (SharkPKIComponent) this.bobPeer.getComponent(SharkPKIComponent.class));
+        SharkBond bondFromAlice = SharkBondSerializer.deserializeCreditBond(messageFromAlice, (SharkPKIComponent) this.bobPeer.getComponent(SharkPKIComponent.class));
 
-        List<SharkBond> bonds = (List<SharkBond>) this.bobComponentImpl.getBondsByDebtor(BOB_ID);
+        //List<SharkBond> bobBonds = (List<SharkBond>) this.bobComponentImpl.getBondsByDebtor(BOB_ID);
         // Bob must have a credit bond from Alice - he issued it by himself
 
         // Check if the correct bond was received
-        Assert.assertFalse(bonds.isEmpty());
-        SharkBond receivedBond = bonds.get(0);
-        Assert.assertEquals(sentBond.getBondID(), receivedBond.getBondID());
-        Assert.assertEquals(sentBond.getAmount(), receivedBond.getAmount());
-        Assert.assertEquals(sentBond.getCreditorID(), receivedBond.getCreditorID());
-        Assert.assertEquals(ALICE_ID, receivedBond.getCreditorID());
-        Assert.assertEquals(sentBond.getDebtorID(), receivedBond.getDebtorID());
-        Assert.assertEquals(BOB_ID, receivedBond.getDebtorID());
-        Assert.assertEquals(sentBond.unitDescription(), receivedBond.unitDescription());
-        Assert.assertEquals(BOND_UNIT, receivedBond.unitDescription());
+        Assert.assertNotNull(bondFromAlice);
+        Assert.assertNotNull(bondFromAlice.getBondID());
+        Assert.assertEquals(bondFromAlice.getAmount(), BOND_AMOUNT);
+        Assert.assertEquals(bondFromAlice.getCreditorID(), ALICE_ID);
+        Assert.assertEquals(bondFromAlice.getDebtorID(), BOB_ID);
+        Assert.assertEquals(bondFromAlice.unitDescription(), BOND_UNIT);
+
+        // After receiving creditBond from Alice, Bob signs it as debtor and send it back to Alice
+        // test results
+        ASAPStorage aliceAsapStorage = this.aliceComponentImpl.getASAPStorage();
+        List<CharSequence> aliceSenderList = aliceAsapStorage.getSender();
+
+        // Sender list can't be null
+        Assert.assertNotNull(aliceSenderList);
+        Assert.assertFalse(aliceSenderList.isEmpty());
+        CharSequence bobSenderID = aliceSenderList.get(0);
+        // Check if the message is coming from bob
+        Assert.assertTrue(this.bobPeer.samePeer(bobSenderID));
+
+        ASAPStorage senderIncomingStorageForAlice = aliceAsapStorage.getExistingIncomingStorage(BOB_ID);
+        ASAPChannel channelForAlice = senderIncomingStorageForAlice.getChannel(SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_SIGNED_BOND_URI);
+        byte[] messageFromBob = channelForAlice.getMessages().getMessage(0, true);
+        Assert.assertNotNull(messageFromBob);
+
+        SharkBond bondFromBob = SharkBondSerializer.deserializeCreditBond(messageFromBob, (SharkPKIComponent) this.alicePeer.getComponent(SharkPKIComponent.class));
     }
 
     /**
@@ -174,44 +281,6 @@ public class SharkCreditMoneyComponentTests {
     @Test
     public void bobCreatesBondAsDebtor() {
         // TODO
-    }
-
-    private class DummySharkBondReceivedListener implements SharkBondReceivedListener {
-        private final SharkCreditMoneyComponent sharkCreditMoneyComponent;
-
-        public DummySharkBondReceivedListener(SharkCreditMoneyComponent sharkCreditMoneyComponent) {
-            this.sharkCreditMoneyComponent = sharkCreditMoneyComponent;
-        }
-
-        @Override
-        public void sharkBondReceived(CharSequence uri) throws ASAPException, IOException, SharkCreditMoneyException {
-
-        }
-
-        @Override
-        public void requestSignAsCreditor(SharkBond bond) throws ASAPException {
-            System.out.println("Message received: " + bond);
-        }
-
-        @Override
-        public void requestSignAsDebtor(SharkBond bond) throws ASAPException {
-            System.out.println("Message received: " + bond);
-        }
-
-        @Override
-        public void requestChangeCreditor(SharkBond bond) throws ASAPException {
-            System.out.println("Message received: " + bond);
-        }
-
-        @Override
-        public void requestChangeDebtor(SharkBond bond) throws ASAPException {
-            System.out.println("Message received: " + bond);
-        }
-
-        @Override
-        public void annulBond(SharkBond bond) throws SharkCreditMoneyException, ASAPException, IOException {
-
-        }
     }
 
     /**

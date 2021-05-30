@@ -14,13 +14,17 @@ import java.util.Set;
 class SharkBondSerializer {
 
     static byte [] serializeCreditBond(SharkBond creditBond, ASAPKeyStore asapKeyStore) throws ASAPSecurityException, IOException {
+        return serializeCreditBond(creditBond, asapKeyStore, true);
+    }
+
+    static byte [] serializeCreditBond(SharkBond creditBond, ASAPKeyStore asapKeyStore, boolean excludeSignature) throws ASAPSecurityException, IOException {
         // recipients
         Set<CharSequence> recipients = new HashSet<>();
         recipients.add(creditBond.getDebtorID());
 
         // Convert bond to byteArray
         // use excludeSignature to exclude or include previous signatures (that can be helpful for a late verification of the the bond signatures)
-        byte[] content = sharkBondToByteArray(creditBond, true);
+        byte[] content = sharkBondToByteArray(creditBond, excludeSignature);
         /////////// produce serialized structure
 
         // merge content, sender and recipient

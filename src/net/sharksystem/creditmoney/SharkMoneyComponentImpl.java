@@ -15,7 +15,7 @@ public class SharkMoneyComponentImpl extends SharkBondReceivedListenerManager im
     private static final String KEY_NAME_SHARK_MESSENGER_CHANNEL_NAME = "sharkMoneyChannelName";
     private final SharkPKIComponent certificateComponent;
     private ASAPPeer asapPeer;
-    private SharkBondReceivedListener sharkBondReceivedListener;
+    private SharkBondsReceivedListener sharkBondReceivedListener;
 
     private boolean allowTransfer = true;
 
@@ -73,7 +73,7 @@ public class SharkMoneyComponentImpl extends SharkBondReceivedListenerManager im
         // Create creditBond and ask to sign by debtor
         InMemoSharkBond creditBond = new InMemoSharkBond(creditorID, debtorID, unit, amount, allowTransfer);
         SharkBondHelper.signAsCreditor(this.certificateComponent, creditBond);
-        this.asapPeer.sendASAPMessage(SHARK_CREDIT_MONEY_FORMAT, SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_DEBTOR_URI, SharkBondSerializer.serializeCreditBond(creditBond, this.certificateComponent));
+        this.asapPeer.sendASAPMessage(SHARK_CREDIT_MONEY_FORMAT, SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_DEBTOR_URI, SharkBondSerializer.serializeCreditBond(creditBond, this.certificateComponent, false));
     }
 
     @Override
@@ -81,7 +81,7 @@ public class SharkMoneyComponentImpl extends SharkBondReceivedListenerManager im
         InMemoSharkBond creditBond = (InMemoSharkBond) bond;
         creditBond.setDebtorID(newDebtor);
         SharkBondHelper.signAsDebtor(this.certificateComponent, creditBond);
-        this.asapPeer.sendASAPMessage(SHARK_CREDIT_MONEY_FORMAT, SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_DEBTOR_URI, SharkBondSerializer.serializeCreditBond(creditBond, this.certificateComponent));
+        this.asapPeer.sendASAPMessage(SHARK_CREDIT_MONEY_FORMAT, SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_DEBTOR_URI, SharkBondSerializer.serializeCreditBond(creditBond, this.certificateComponent, false));
     }
 
     @Override
@@ -89,15 +89,14 @@ public class SharkMoneyComponentImpl extends SharkBondReceivedListenerManager im
         InMemoSharkBond creditBond = (InMemoSharkBond) bond;
         creditBond.setCreditorID(newCreditor);
         SharkBondHelper.signAsCreditor(this.certificateComponent, creditBond);
-        this.asapPeer.sendASAPMessage(SHARK_CREDIT_MONEY_FORMAT, SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_CREDITOR_URI, SharkBondSerializer.serializeCreditBond(creditBond, this.certificateComponent));
+        this.asapPeer.sendASAPMessage(SHARK_CREDIT_MONEY_FORMAT, SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_CREDITOR_URI, SharkBondSerializer.serializeCreditBond(creditBond, this.certificateComponent, false));
     }
 
     @Override
     public Collection<SharkBond> getBondsByCreditor(CharSequence creditorID) throws SharkCreditMoneyException {
         try {
-            ASAPStorage asapStorage =this.getASAPStorage();
-
-            ASAPMessages asapMessages = asapStorage.getChannel(SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_CREDITOR_URI).getMessages();
+            ASAPStorage asapStorage = this.getASAPStorage();
+            ASAPMessages asapMessages = asapStorage.getChannel(SHARK_CREDIT_MONEY_SIGNED_BOND_URI).getMessages(false);
             Collection<SharkBond> bonds = new ArrayList<>();
             Iterator<byte[]> bondIterator = asapMessages.getMessages();
             while (bondIterator.hasNext()) {
@@ -117,9 +116,8 @@ public class SharkMoneyComponentImpl extends SharkBondReceivedListenerManager im
     @Override
     public Collection<SharkBond> getBondsByDebtor(CharSequence debtorID) throws SharkCreditMoneyException {
         try {
-            ASAPStorage asapStorage =
-                    this.asapPeer.getASAPStorage(SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_FORMAT);
-            ASAPMessages asapMessages = asapStorage.getChannel(SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_DEBTOR_URI).getMessages(false);
+            ASAPStorage asapStorage = this.getASAPStorage();
+            ASAPMessages asapMessages = asapStorage.getChannel(SHARK_CREDIT_MONEY_SIGNED_BOND_URI).getMessages(false);
             Collection<SharkBond> bonds = new ArrayList<>();
             Iterator<byte[]> bondIterator = asapMessages.getMessages();
             while (bondIterator.hasNext()) {
@@ -158,9 +156,10 @@ public class SharkMoneyComponentImpl extends SharkBondReceivedListenerManager im
     }
 
     @Override
-    public void subscribeBondReceivedListener(SharkBondReceivedListener listener) {
+    public void subscribeBondReceivedListener(SharkBondsReceivedListener listener) {
         // TODO just one listener. OK?
         this.sharkBondReceivedListener = listener;
+        this.addSharkBondReceivedListener(listener);
     }
 
     @Override

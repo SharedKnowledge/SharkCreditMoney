@@ -198,9 +198,12 @@ public interface SharkCreditMoneyComponent extends SharkComponent {
 
     void replaceCreditor(SharkBond bond, CharSequence newCreditorID) throws SharkCreditMoneyException, ASAPException, IOException;
 
-    void subscribeBondReceivedListener(SharkBondReceivedListener listener);
+    void subscribeBondReceivedListener(SharkBondsReceivedListener listener);
 
     ASAPPeer getASAPPeer();
 
     ASAPStorage getASAPStorage() throws IOException, ASAPException;
+    void addSharkBondReceivedListener(SharkBondsReceivedListener listener);
+
+    void removeSharkBondReceivedListener(SharkBondsReceivedListener listener);
 }

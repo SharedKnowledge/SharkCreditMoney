@@ -5,10 +5,10 @@ import net.sharksystem.asap.ASAPStorage;
 
 import java.io.IOException;
 
-public class SharkBondReceivedListenerImpl implements SharkBondReceivedListener {
+public class SharkBondsReceivedListenerImpl implements SharkBondsReceivedListener {
     private final SharkCreditMoneyComponent sharkCreditMoneyComponent;
 
-    public SharkBondReceivedListenerImpl(SharkCreditMoneyComponent sharkCreditMoneyComponent) {
+    public SharkBondsReceivedListenerImpl(SharkCreditMoneyComponent sharkCreditMoneyComponent) {
         this.sharkCreditMoneyComponent = sharkCreditMoneyComponent;
     }
 
