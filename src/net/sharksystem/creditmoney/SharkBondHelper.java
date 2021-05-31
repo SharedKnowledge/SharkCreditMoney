@@ -7,6 +7,8 @@ import net.sharksystem.asap.pki.ASAPKeyStorage;
 
 import java.io.IOException;
 import java.util.Calendar;
+import java.util.HashSet;
+import java.util.Set;
 
 class SharkBondHelper {
     /**
@@ -152,6 +154,10 @@ class SharkBondHelper {
     }
 
     private static byte[] signBond(ASAPKeyStore ASAPKeyStore, SharkBond Bond) throws ASAPSecurityException, IOException {
-        return ASAPCryptoAlgorithms.sign(SharkBondSerializer.serializeCreditBond(Bond, ASAPKeyStore), ASAPKeyStore);
+        Set<CharSequence> receiver = new HashSet<>();
+        receiver.add(Bond.getDebtorID());
+        byte[] serializedBond = SharkBondSerializer.serializeCreditBond(Bond, Bond.getCreditorID(), receiver, true, true, ASAPKeyStore, true);
+
+        return ASAPCryptoAlgorithms.sign(serializedBond, ASAPKeyStore);
     }
 }

@@ -13,14 +13,27 @@ import java.util.Set;
 
 class SharkBondSerializer {
 
-    static byte [] serializeCreditBond(SharkBond creditBond, ASAPKeyStore asapKeyStore) throws ASAPSecurityException, IOException {
-        return serializeCreditBond(creditBond, asapKeyStore, true);
+    static byte [] serializeCreditBond(SharkBond creditBond, ASAPKeyStore asapKeyStore) throws IOException, ASAPSecurityException {
+        return serializeCreditBond(creditBond, null, null, true, true, asapKeyStore, true);
     }
 
-    static byte [] serializeCreditBond(SharkBond creditBond, ASAPKeyStore asapKeyStore, boolean excludeSignature) throws ASAPSecurityException, IOException {
-        // recipients
-        Set<CharSequence> recipients = new HashSet<>();
-        recipients.add(creditBond.getDebtorID());
+    static byte [] serializeCreditBond(SharkBond creditBond, CharSequence sender, Set<CharSequence> receiver,
+                                       boolean sign, boolean encrypt, ASAPKeyStore asapKeyStore, boolean excludeSignature) throws ASAPSecurityException, IOException {
+
+        if( (receiver != null && receiver.size() > 1) && encrypt) {
+            throw new ASAPSecurityException("cannot (yet) encrypt one message for more than one recipient - split it into more messages");
+        }
+
+        if(receiver == null || receiver.isEmpty()) {
+            if(encrypt) throw new ASAPSecurityException("impossible to encrypt a message without a receiver");
+            // else
+            receiver = new HashSet<>();
+            receiver.add(creditBond.getDebtorID());
+        }
+
+        if(sender == null) {
+            sender = creditBond.getCreditorID();
+        }
 
         // Convert bond to byteArray
         // use excludeSignature to exclude or include previous signatures (that can be helpful for a late verification of the the bond signatures)
@@ -32,9 +45,9 @@ class SharkBondSerializer {
         ///// content
         ASAPSerialization.writeByteArray(content, baos);
         ///// sender is the creditor
-        ASAPSerialization.writeCharSequenceParameter(creditBond.getCreditorID(), baos);
+        ASAPSerialization.writeCharSequenceParameter(sender, baos);
         ///// recipients
-        ASAPSerialization.writeCharSequenceSetParameter(recipients, baos);
+        ASAPSerialization.writeCharSequenceSetParameter(receiver, baos);
         ///// timestamp
         Timestamp creationTime = new Timestamp(System.currentTimeMillis());
         String timestampString = creationTime.toString();
@@ -43,22 +56,26 @@ class SharkBondSerializer {
         content = baos.toByteArray();
 
         byte flags = 0;
-        // Sign SN Message
-        byte[] signature = ASAPCryptoAlgorithms.sign(content, asapKeyStore);
-        baos = new ByteArrayOutputStream();
-        ASAPSerialization.writeByteArray(content, baos); // message has three parts: content, sender, receiver
-        // append signature
-        ASAPSerialization.writeByteArray(signature, baos);
-        // attach signature to message
-        content = baos.toByteArray();
-        flags += SharkBond.SIGNED_MASK;
+        // Sign SC Bond Message
+        if(sign) {
+            byte[] signature = ASAPCryptoAlgorithms.sign(content, asapKeyStore);
+            baos = new ByteArrayOutputStream();
+            ASAPSerialization.writeByteArray(content, baos); // message has three parts: content, sender, receiver
+            // append signature
+            ASAPSerialization.writeByteArray(signature, baos);
+            // attach signature to message
+            content = baos.toByteArray();
+            flags += SharkBond.SIGNED_MASK;
+        }
 
-        // Encrypt SN Message
-        content = ASAPCryptoAlgorithms.produceEncryptedMessagePackage(
-                content,
-                recipients.iterator().next(), // already checked if one and only one is recipient
-                asapKeyStore);
-        flags += SharkBond.ENCRYPTED_MASK;
+        if(encrypt) {
+            // Encrypt SN Message
+            content = ASAPCryptoAlgorithms.produceEncryptedMessagePackage(
+                    content,
+                    receiver.iterator().next(), // already checked if one and only one is recipient
+                    asapKeyStore);
+            flags += SharkBond.ENCRYPTED_MASK;
+        }
 
         // serialize SN message
         baos = new ByteArrayOutputStream();
@@ -76,14 +93,20 @@ class SharkBondSerializer {
         boolean signed = (flags & SharkBond.SIGNED_MASK) != 0;
         boolean encrypted = (flags & SharkBond.ENCRYPTED_MASK) != 0;
 
+        if (encrypted) {
             // decrypt
-        bais = new ByteArrayInputStream(tmpMessage);
-        ASAPCryptoAlgorithms.EncryptedMessagePackage
-                encryptedMessagePackage = ASAPCryptoAlgorithms.parseEncryptedMessagePackage(bais);
+            bais = new ByteArrayInputStream(tmpMessage);
+            ASAPCryptoAlgorithms.EncryptedMessagePackage
+                    encryptedMessagePackage = ASAPCryptoAlgorithms.parseEncryptedMessagePackage(bais);
 
-        // replace message with decrypted message
-        tmpMessage = ASAPCryptoAlgorithms.decryptPackage(
-                encryptedMessagePackage, asapKeyStore);
+            // for me?
+            if (!asapKeyStore.isOwner(encryptedMessagePackage.getRecipient())) {
+                throw new ASAPException("SharkBond Message: message not for me");
+            }
+            // replace message with decrypted message
+            tmpMessage = ASAPCryptoAlgorithms.decryptPackage(
+                    encryptedMessagePackage, asapKeyStore);
+        }
 
         byte[] signature = null;
         byte[] signedMessage = null;
