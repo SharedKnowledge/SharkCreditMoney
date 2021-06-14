@@ -138,7 +138,7 @@ public class SharkCreditMoneyComponentTests {
         Assert.assertEquals(10, iaAliceSideBob); // met
         System.out.println("10 - okay, Alice met Bob");
         Assert.assertEquals(10, iaAliceSideClara); // met
-        System.out.println("10 - okay, Alice knows Clara");
+        System.out.println("10 - okay, Alice meet Clara");
         Assert.assertEquals(10, iaBobSideAlice); // met
         System.out.println("10 - okay, Bob met Alice");
         Assert.assertEquals(10, iaBobSideClara); // met
