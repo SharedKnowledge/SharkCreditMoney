@@ -63,18 +63,15 @@ public class SharkCreditMoneyComponentImpl extends SharkBondReceivedListenerMana
         // Create creditBond and ask to sign by debtor
         InMemoSharkBond creditBond = new InMemoSharkBond(creditorID, debtorID, unit, amount, allowTransfer);
         Set<CharSequence> receiver = new HashSet<>();
-        CharSequence sender;
         if (asCreditor) {
-            sender = creditorID;
             SharkBondHelper.signAsCreditor(this.certificateComponent, creditBond);
             receiver.add(creditBond.getDebtorID());
+            this.sendBond(creditBond, creditorID, receiver, true, true, SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_DEBTOR_URI);
         } else {
-            sender = debtorID;
             SharkBondHelper.signAsDebtor(this.certificateComponent, creditBond);
             receiver.add(creditBond.getCreditorID());
+            this.sendBond(creditBond, debtorID, receiver, true, true, SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_CREDITOR_URI);
         }
-
-        this.sendBond(creditBond, sender, receiver, true, true, SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_DEBTOR_URI);
     }
 
     @Override

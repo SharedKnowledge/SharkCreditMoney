@@ -299,18 +299,18 @@ class SharkBondSerializer {
         JSONArray creditorJsonArray = new JSONArray(creditorSignature);
 
         return "{" +
-                "\"bondID\":\"" + creditBond.getBondID() + "\""+
+                " \"bondID\":\"" + creditBond.getBondID() + "\""+
                 ", \"creditorID\":\"" + creditBond.getCreditorID() + "\""+
                 ", \"debtorID\":\"" + creditBond.getDebtorID() + "\""+
                 ", \"unitDescription\":\"" + creditBond.unitDescription() + "\""+
                 ", \"amount\":" + creditBond.getAmount() +
-                ",\"expirationDate\":" + creditBond.getExpirationDate() +
+                ", \"expirationDate\":" + creditBond.getExpirationDate() +
                 ", \"debtorSignature\":" + debtorJsonArray.toString() +
                 ", \"creditorSignature\":" + creditorJsonArray.toString() +
-                ", \"allowedToChangeDebtor\":" + creditBond.allowedToChangeDebtor() +
                 ", \"allowedToChangeCreditor\":" + creditBond.allowedToChangeCreditor() +
+                ", \"allowedToChangeDebtor\":" + creditBond.allowedToChangeDebtor() +
                 ", \"bondIsAnnulledByCreditor\":" + creditBond.getBondIsAnnulledByCreditor() +
-                ", \"bondIsAnnulledByCreditor\":" + creditBond.getBondIsAnnulledByDebtor() +
+                ", \"bondIsAnnulledByDebtor\":" + creditBond.getBondIsAnnulledByDebtor() +
                 ", \"tempCreditorID\":\"" + creditBond.getTempCreditorID() + "\""+
                 ", \"tempDebtorID\":\"" + creditBond.getTempDebtorID() + "\""+
                 '}';
@@ -341,7 +341,7 @@ class SharkBondSerializer {
                 jsonObject.getBoolean("allowedToChangeCreditor"),
                 jsonObject.getBoolean("allowedToChangeDebtor"),
                 jsonObject.getBoolean("bondIsAnnulledByCreditor"),
-                jsonObject.getBoolean("bondIsAnnulledByCreditor"),
+                jsonObject.getBoolean("bondIsAnnulledByDebtor"),
                 jsonObject.getString("tempCreditorID"),
                 jsonObject.getString("tempDebtorID")
         );

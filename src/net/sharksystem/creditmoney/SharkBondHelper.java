@@ -20,7 +20,7 @@ class SharkBondHelper {
         if (!ASAPKeyStore.getOwner().equals(bond.getDebtorID())) {
             throw new SharkCreditMoneyException("The provided keyStore owner (" + ASAPKeyStore.getOwner() + ") doesn't match the debtor's id (" + bond.getDebtorID() + ")");
         } else {
-            bond.setDebtorSignature(signBond(ASAPKeyStore, bond));
+            bond.setDebtorSignature(signBond(ASAPKeyStore, bond, false));
         }
     }
 
@@ -35,7 +35,7 @@ class SharkBondHelper {
         if (!ASAPKeyStore.getOwner().equals(bond.getCreditorID())) {
             throw new SharkCreditMoneyException("The provided keyStore owner (" + ASAPKeyStore.getOwner() + ") doesn't match the creditor's id (" + bond.getCreditorID() + ")");
         } else {
-            bond.setCreditorSignature(signBond(ASAPKeyStore, bond));
+            bond.setCreditorSignature(signBond(ASAPKeyStore, bond, true));
         }
     }
 
@@ -141,7 +141,7 @@ class SharkBondHelper {
             // Test: if the old debtor signature is correct
             throw new SharkCreditMoneyException("The provided SharkBond doesn't contain a correct signature of the old debtor. The request will be rejected.");
         } else {
-            bond.setDebtorSignature(signBond(asapKeyStore, bond));
+            bond.setDebtorSignature(signBond(asapKeyStore, bond, false));
         }
     }
 
@@ -159,7 +159,7 @@ class SharkBondHelper {
             // Test: if the old creditor signature is correct
             throw new SharkCreditMoneyException("The provided SharkBond doesn't contain a correct signature of the old creditor. The request will be rejected.");
         } else {
-            bond.setCreditorSignature(signBond(asapKeyStore, bond));
+            bond.setCreditorSignature(signBond(asapKeyStore, bond, true));
         }
     }
 
@@ -174,10 +174,10 @@ class SharkBondHelper {
             // Sign the bond
             if (asapKeyStore.getOwner().equals(bond.getCreditorID())) {
                 bond.setBondIsAnnulledByCreditor();
-                bond.setCreditorSignature(signBond(asapKeyStore, bond));
+                bond.setCreditorSignature(signBond(asapKeyStore, bond, true));
             } else if (asapKeyStore.getOwner().equals(bond.getDebtorID())) {
                 bond.setBondIsAnnulledByDebtor();
-                bond.setDebtorSignature(signBond(asapKeyStore, bond));
+                bond.setDebtorSignature(signBond(asapKeyStore, bond, false));
             }
         }
     }
@@ -212,9 +212,16 @@ class SharkBondHelper {
         return ASAPCryptoAlgorithms.verify(creditBond, signature, signer, asapKeyStore);
     }
 
-    private static byte[] signBond(ASAPKeyStore ASAPKeyStore, SharkBond Bond) throws ASAPSecurityException, IOException {
+    private static byte[] signBond(ASAPKeyStore asapKeyStore, SharkBond bond, boolean signAsCreditor) throws ASAPSecurityException, IOException {
         Set<CharSequence> receiver = new HashSet<>();
-        receiver.add(Bond.getDebtorID());
-        return SharkBondSerializer.serializeCreditBond(Bond, Bond.getCreditorID(), receiver, true, true, ASAPKeyStore, true, 1);
+        CharSequence sender;
+        if (signAsCreditor) {
+            sender = bond.getCreditorID();
+            receiver.add(bond.getDebtorID());
+        } else {
+            sender = bond.getDebtorID();
+            receiver.add(bond.getCreditorID());
+        }
+        return SharkBondSerializer.serializeCreditBond(bond, sender, receiver, true, true, asapKeyStore, true, 1);
     }
 }

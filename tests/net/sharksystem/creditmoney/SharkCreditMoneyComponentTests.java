@@ -13,6 +13,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -120,6 +121,7 @@ public class SharkCreditMoneyComponentTests {
         //////////////////////////////////////////////////////////////////////////////////////////////////////////
         @Override
         public void sharkBondReceived(CharSequence uri) throws ASAPException, IOException, SharkCreditMoneyException {
+            System.out.println("### Inside Counter ####");
             CharSequence sender;
             Set<CharSequence> receiver;
             ASAPStorage asapStorage = this.sharkCreditMoneyComponent.getASAPStorage();
@@ -264,22 +266,12 @@ public class SharkCreditMoneyComponentTests {
         ///////////////////////////////// ASAP specific code - make an encounter Alice Bob
         this.runEncounter(this.alicePeer, this.bobPeer, true);
 
-        // test results
-        ASAPStorage bobAsapStorage = this.bobComponentImpl.getASAPStorage();
-        List<CharSequence> bobSenderList = bobAsapStorage.getSender();
+        Collection<SharkBond> bobBondList = this.bobComponent.getBondsByCreditor(ALICE_ID);
 
-        // Sender list can't be null
-        Assert.assertNotNull(bobSenderList);
-        Assert.assertFalse(bobSenderList.isEmpty());
-        CharSequence aliceSenderID = bobSenderList.get(0);
-        Assert.assertTrue(this.alicePeer.samePeer(aliceSenderID));
-
-        ASAPStorage senderIncomingStorageForBob = bobAsapStorage.getExistingIncomingStorage(ALICE_ID);
-        ASAPChannel channelForBob = senderIncomingStorageForBob.getChannel(SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_DEBTOR_URI);
-        byte[] messageFromAlice = channelForBob.getMessages().getMessage(0, true);
-        Assert.assertNotNull(messageFromAlice);
-
-        SharkBond bondFromAlice = SharkBondSerializer.deserializeCreditBond(messageFromAlice, (SharkPKIComponent) this.bobPeer.getComponent(SharkPKIComponent.class));
+        // Bond list can't be null
+        Assert.assertNotNull(bobBondList);
+        Assert.assertFalse(bobBondList.isEmpty());
+        SharkBond bondFromAlice = (SharkBond) bobBondList.toArray()[0];
 
         // Bob must have a credit bond from Alice - he issued it by himself
 
@@ -296,22 +288,12 @@ public class SharkCreditMoneyComponentTests {
 
         // After receiving creditBond from Alice, Bob signs it as debtor and send it back to Alice
         // test results
-        ASAPStorage aliceAsapStorage = this.aliceComponentImpl.getASAPStorage();
-        List<CharSequence> aliceSenderList = aliceAsapStorage.getSender();
+        Collection<SharkBond> aliceBondList = this.bobComponent.getBondsByCreditor(ALICE_ID);
 
-        // Sender list can't be null
-        Assert.assertNotNull(aliceSenderList);
-        Assert.assertFalse(aliceSenderList.isEmpty());
-        CharSequence bobSenderID = aliceSenderList.get(0);
-        // Check if the message is coming from bob
-        Assert.assertTrue(this.bobPeer.samePeer(bobSenderID));
-
-        ASAPStorage senderIncomingStorageForAlice = aliceAsapStorage.getExistingIncomingStorage(BOB_ID);
-        ASAPChannel channelForAlice = senderIncomingStorageForAlice.getChannel(SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_SIGNED_BOND_URI);
-        byte[] messageFromBob = channelForAlice.getMessages().getMessage(0, true);
-        Assert.assertNotNull(messageFromBob);
-
-        SharkBond bondFromBob = SharkBondSerializer.deserializeCreditBond(messageFromBob, (SharkPKIComponent) this.alicePeer.getComponent(SharkPKIComponent.class));
+        // Bond list can't be null
+        Assert.assertNotNull(aliceBondList);
+        Assert.assertFalse(aliceBondList.isEmpty());
+        SharkBond bondFromBob = (SharkBond) aliceBondList.toArray()[0];
 
         Assert.assertNotNull(bondFromBob);
         Assert.assertNotNull(bondFromBob.getBondID());
@@ -321,15 +303,62 @@ public class SharkCreditMoneyComponentTests {
         Assert.assertEquals(bondFromBob.unitDescription(), BOND_UNIT);
 
         // Verify debtor signature
-        Assert.assertTrue(SharkBondHelper.isSignedAsCreditor(bondFromBob, (SharkPKIComponent) this.alicePeer.getComponent(SharkPKIComponent.class)));
+        Assert.assertTrue(SharkBondHelper.isSignedAsDebtor(bondFromBob, (SharkPKIComponent) this.alicePeer.getComponent(SharkPKIComponent.class)));
     }
 
     /**
      * Bob creates Bond as debtor. Alice accepts as creditor.
      */
     @Test
-    public void bobCreatesBondAsDebtor() {
-        // TODO
+    public void bobCreatesBondAsDebtor() throws ASAPException, SharkException, IOException, InterruptedException {
+        // Setup Scenario
+        this.setUpAliceBobExchangeScenario();
+
+        ////////////////////////////////// bond specific tests start here
+        // Create a bond: Creditor Alice, debtor Bob of 100 "Euro"
+        this.bobComponent.createBond(ALICE_ID, BOB_ID, BOND_UNIT, BOND_AMOUNT, false);
+
+        ///////////////////////////////// ASAP specific code - make an encounter Alice Bob
+        this.runEncounter(this.bobPeer, this.alicePeer, true);
+
+        Collection<SharkBond> aliceBondList = this.aliceComponent.getBondsByDebtor(BOB_ID);
+
+        // Bond list can't be null
+        Assert.assertNotNull(aliceBondList);
+        Assert.assertFalse(aliceBondList.isEmpty());
+        SharkBond bondFromBob = (SharkBond) aliceBondList.toArray()[0];
+
+        // Bob must have a credit bond from Alice - he issued it by himself
+
+        // Check if the correct bond was received
+        Assert.assertNotNull(bondFromBob);
+        Assert.assertNotNull(bondFromBob.getBondID());
+        Assert.assertEquals(bondFromBob.getAmount(), BOND_AMOUNT);
+        Assert.assertEquals(bondFromBob.getCreditorID(), ALICE_ID);
+        Assert.assertEquals(bondFromBob.getDebtorID(), BOB_ID);
+        Assert.assertEquals(bondFromBob.unitDescription(), BOND_UNIT);
+
+        // Verify creditor signature
+        Assert.assertTrue(SharkBondHelper.isSignedAsDebtor(bondFromBob, (SharkPKIComponent) this.alicePeer.getComponent(SharkPKIComponent.class)));
+
+        // After receiving creditBond from Alice, Bob signs it as debtor and send it back to Alice
+        // test results
+        Collection<SharkBond> bobBondList = this.bobComponent.getBondsByCreditor(ALICE_ID);
+
+        // Bond list can't be null
+        Assert.assertNotNull(bobBondList);
+        Assert.assertFalse(bobBondList.isEmpty());
+        SharkBond bondFromAlice = (SharkBond) bobBondList.toArray()[0];
+
+        Assert.assertNotNull(bondFromAlice);
+        Assert.assertNotNull(bondFromAlice.getBondID());
+        Assert.assertEquals(bondFromAlice.getAmount(), BOND_AMOUNT);
+        Assert.assertEquals(bondFromAlice.getCreditorID(), ALICE_ID);
+        Assert.assertEquals(bondFromAlice.getDebtorID(), BOB_ID);
+        Assert.assertEquals(bondFromAlice.unitDescription(), BOND_UNIT);
+
+        // Verify debtor signature
+        Assert.assertTrue(SharkBondHelper.isSignedAsCreditor(bondFromAlice, (SharkPKIComponent) this.bobPeer.getComponent(SharkPKIComponent.class)));
     }
 
     /**
