@@ -21,8 +21,6 @@ public class SharkBondSerializerAndHelperTests {
     public static final String BOB_FOLDER = THIS_ROOT_DIRECTORY + BOB_NAME;
     private SharkTestPeerFS alicePeer;
     private SharkTestPeerFS bobPeer;
-    private SharkCreditMoneyComponent aliceComponent;
-    private SharkCreditMoneyComponent bobComponent;
     SharkPKIComponent alicePKI;
     SharkPKIComponent bobPKI;
 
@@ -53,9 +51,6 @@ public class SharkBondSerializerAndHelperTests {
         // Alice accepts Bob Public Key
         CredentialMessageInMemo bobCredentialMessage = new CredentialMessageInMemo(BOB_ID, BOB_NAME, System.currentTimeMillis(), bobPKI.getPublicKey());
         alicePKI.acceptAndSignCredential(bobCredentialMessage);
-
-        this.aliceComponent = (SharkCreditMoneyComponent) this.alicePeer.getComponent(SharkCreditMoneyComponent.class);
-        this.bobComponent = (SharkCreditMoneyComponent) this.bobPeer.getComponent(SharkCreditMoneyComponent.class);
 
         // Get pki keys from peers
         this.alicePKI = (SharkPKIComponent) this.alicePeer.getComponent(SharkPKIComponent.class);
