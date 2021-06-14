@@ -376,7 +376,7 @@ public class SharkCreditMoneyComponentTests {
         Assert.assertEquals(claraBond.getAmount(), aliceBond.getAmount());
         Assert.assertEquals(claraBond.unitDescription(), aliceBond.unitDescription());
         Assert.assertEquals(claraBond.getCreditorID(), CLARA_ID);
-        Assert.assertEquals(claraBond.getDebtorID(), BOB_ID);
+        Assert.assertEquals(claraBond.getDebtorID(), aliceBond.getDebtorID());
 
         // Verify creditor signature
         Assert.assertTrue(SharkBondHelper.isSignedAsCreditor(claraBond, (SharkPKIComponent) this.claraPeer.getComponent(SharkPKIComponent.class)));
@@ -386,7 +386,68 @@ public class SharkCreditMoneyComponentTests {
      * Bond (Alice (creditor), bob (deptor). Bob wants to change creditor to Clara.
      */
     @Test
-    public void bobWantBondDebtorTestTransferToClara() {
-        // TODO
+    public void bobWantBondDebtorTestTransferToClara() throws SharkException, IOException, ASAPException, InterruptedException {
+        // Setup Scenario
+        this.setUpAliceBobClaraExchangeScenario();
+
+        // Create a bond: Creditor Alice, debtor Bob of 100 "Euro"
+        this.aliceComponent.createBond(ALICE_ID, BOB_ID, BOND_UNIT, BOND_AMOUNT, true);
+
+        ///////////////////////////////// ASAP specific code - make an encounter Alice Bob
+        this.runEncounter(this.alicePeer, this.bobPeer, true);
+
+        // Once the created bond was exchanged and saved by alice and bob, we can now start a bond transfer
+
+        Collection<SharkBond> bobBondList = this.aliceComponent.getBondsByDebtor(BOB_ID);
+        SharkBond bobBond = (SharkBond) bobBondList.toArray()[0];
+
+        // transfer bond creditor to clara
+        bobBond.setTempDebtorID(CLARA_ID);
+        this.bobComponent.transferBond(bobBond, false);
+
+        ///////////////////////////////// ASAP specific code - make an encounter Alice Bob
+        this.runEncounter(this.claraPeer, this.bobPeer, true);
+        this.runEncounter(this.alicePeer, this.claraPeer, true);
+
+        // The transfer of the bond should now be fulfill
+        // Check if bob and clara have the correct bond
+        Collection<SharkBond> aliceBondList = this.aliceComponent.getBondsByDebtor(CLARA_ID);
+
+        // bobBond's list can't be null
+        Assert.assertNotNull(aliceBondList);
+        Assert.assertFalse(aliceBondList.isEmpty());
+        SharkBond aliceBond = (SharkBond) aliceBondList.toArray()[0];
+
+        Assert.assertNotNull(aliceBond);
+        Assert.assertNotNull(aliceBond.getBondID());
+        Assert.assertEquals(aliceBond.getBondID(), bobBond.getBondID());
+        Assert.assertEquals(aliceBond.getAmount(), bobBond.getAmount());
+        Assert.assertEquals(aliceBond.unitDescription(), bobBond.unitDescription());
+        Assert.assertEquals(aliceBond.getCreditorID(), bobBond.getCreditorID());
+        Assert.assertEquals(aliceBond.getDebtorID(), CLARA_ID);
+
+        // Verify creditor signature
+        Assert.assertTrue(SharkBondHelper.isSignedAsCreditor(aliceBond, (SharkPKIComponent) this.alicePeer.getComponent(SharkPKIComponent.class)));
+
+        // The transfer of the bond should now be fulfill
+        // Check if bob and clara have the correct bond
+        Collection<SharkBond> claraBondList = this.claraComponent.getBondsByDebtor(CLARA_ID);
+
+        // claraBond's list can't be null
+        Assert.assertNotNull(claraBondList);
+        Assert.assertFalse(claraBondList.isEmpty());
+        SharkBond claraBond = (SharkBond) claraBondList.toArray()[0];
+
+        Assert.assertNotNull(claraBond);
+        Assert.assertNotNull(claraBond.getBondID());
+        Assert.assertEquals(claraBond.getBondID(), aliceBond.getBondID());
+        Assert.assertEquals(claraBond.getAmount(), aliceBond.getAmount());
+        Assert.assertEquals(claraBond.unitDescription(), aliceBond.unitDescription());
+        Assert.assertEquals(claraBond.getCreditorID(), aliceBond.getCreditorID());
+        Assert.assertEquals(claraBond.getDebtorID(), CLARA_ID);
+
+        // Verify debtor signature
+        Assert.assertTrue(SharkBondHelper.isSignedAsDebtor(claraBond, (SharkPKIComponent) this.claraPeer.getComponent(SharkPKIComponent.class)));
+
     }
 }

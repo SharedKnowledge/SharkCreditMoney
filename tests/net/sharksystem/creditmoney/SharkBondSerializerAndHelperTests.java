@@ -63,7 +63,7 @@ public class SharkBondSerializerAndHelperTests {
     }
 
     @Test
-    public void bondTestUserSignatures() throws SharkException, IOException, ASAPSecurityException {
+    public void bondTestUserSignaturesForCreditorAndDebtor() throws SharkException, IOException, ASAPSecurityException {
         this.setUpSharkBondFunctionalitiesScenario();
         SharkBond sharkBond = new InMemoSharkBond(ALICE_ID, BOB_ID, BOND_UNIT, BOND_AMOUNT, false);
 
@@ -83,7 +83,7 @@ public class SharkBondSerializerAndHelperTests {
     }
 
     @Test
-    public void testAnnulBond() throws ASAPException, SharkException, IOException {
+    public void bondTestAnnulBondByCreditorAndDebtor() throws ASAPException, SharkException, IOException {
         this.setUpSharkBondFunctionalitiesScenario();
         SharkBond sharkBond = new InMemoSharkBond(ALICE_ID, BOB_ID, BOND_UNIT, BOND_AMOUNT, false);
         Set<CharSequence> receiver = new HashSet<>();
