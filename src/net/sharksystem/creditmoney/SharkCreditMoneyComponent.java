@@ -190,13 +190,11 @@ public interface SharkCreditMoneyComponent extends SharkComponent {
             throws SharkCreditMoneyException, ASAPException, IOException;
 
     /**
-     * The former debtor asks to replace it with new one.
+     * Start bond transfer protocol
      * @param bond
-     * @throws SharkCreditMoneyException e.g. this peer is not debtor of this bond, missing certificate(s)
+     * @param asCreditor
      */
-    void replaceDebtor(SharkBond bond) throws SharkCreditMoneyException, ASAPException, IOException;
-
-    void replaceCreditor(SharkBond bond) throws SharkCreditMoneyException, ASAPException, IOException;
+    void transferBond(SharkBond bond, boolean asCreditor) throws SharkCreditMoneyException, IOException, ASAPException;
 
     void sendBond(SharkBond bond, CharSequence sender, Set<CharSequence> receiver, boolean sign, boolean encrypt, CharSequence uri) throws IOException, ASAPException, SharkCreditMoneyException;
 

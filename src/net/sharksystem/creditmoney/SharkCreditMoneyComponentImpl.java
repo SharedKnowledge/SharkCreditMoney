@@ -15,7 +15,7 @@ public class SharkCreditMoneyComponentImpl extends SharkBondReceivedListenerMana
     private ASAPPeer asapPeer;
     private SharkBondsReceivedListener sharkBondReceivedListener;
     private SharkBondStorage sharkBondStorage;
-    private boolean allowTransfer = true;
+    private boolean allowTransfer = false;
 
 
     public SharkCreditMoneyComponentImpl(SharkPKIComponent certificateComponent) {
@@ -64,41 +64,41 @@ public class SharkCreditMoneyComponentImpl extends SharkBondReceivedListenerMana
         InMemoSharkBond creditBond = new InMemoSharkBond(creditorID, debtorID, unit, amount, allowTransfer);
         Set<CharSequence> receiver = new HashSet<>();
         if (asCreditor) {
-            SharkBondHelper.signAsCreditor(this.certificateComponent, creditBond);
+            SharkBondHelper.signAsCreditor(this.certificateComponent, creditBond, false);
             receiver.add(creditBond.getDebtorID());
             this.sendBond(creditBond, creditorID, receiver, true, true, SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_DEBTOR_URI);
         } else {
-            SharkBondHelper.signAsDebtor(this.certificateComponent, creditBond);
+            SharkBondHelper.signAsDebtor(this.certificateComponent, creditBond, false);
             receiver.add(creditBond.getCreditorID());
             this.sendBond(creditBond, debtorID, receiver, true, true, SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_CREDITOR_URI);
         }
     }
 
+    /**
+     * Start bond transfer protocol
+     *
+     * @param bond
+     * @param asCreditor
+     */
     @Override
-    public void replaceDebtor(SharkBond bond) throws SharkCreditMoneyException, ASAPException, IOException {
-        InMemoSharkBond creditBond = (InMemoSharkBond) bond;
-        creditBond.setDebtorID(this.asapPeer.getPeerID());
-        SharkBondHelper.signAsDebtor(this.certificateComponent, creditBond);
+    public void transferBond(SharkBond bond, boolean asCreditor) throws SharkCreditMoneyException, IOException, ASAPException {
         Set<CharSequence> receiver = new HashSet<>();
-        receiver.add(creditBond.getCreditorID());
-        this.sendBond(creditBond, creditBond.getDebtorID(), receiver, true, true, SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_DEBTOR_URI);
-    }
-
-    @Override
-    public void replaceCreditor(SharkBond bond) throws SharkCreditMoneyException, ASAPException, IOException {
-        InMemoSharkBond creditBond = (InMemoSharkBond) bond;
-        creditBond.setCreditorID(this.asapPeer.getPeerID());
-        SharkBondHelper.signAsCreditor(this.certificateComponent, creditBond);
-        Set<CharSequence> receiver = new HashSet<>();
-        receiver.add(creditBond.getDebtorID());
-        this.sendBond(creditBond, creditBond.getCreditorID(), receiver, true, true, SHARK_CREDIT_MONEY_ASKED_TO_SIGN_AS_CREDITOR_URI);
+        if (asCreditor) {
+            SharkBondHelper.signAsCreditor(this.certificateComponent, bond, false);
+            receiver.add(bond.getDebtorID());
+            this.sendBond(bond, bond.getCreditorID(), receiver, true, true, SHARK_CREDIT_MONEY_ASKED_TO_ACCEPT_TRANSFER_CREDITOR_URI);
+        } else {
+            SharkBondHelper.signAsDebtor(this.certificateComponent, bond, false);
+            receiver.add(bond.getCreditorID());
+            this.sendBond(bond, bond.getDebtorID(), receiver, true, true, SHARK_CREDIT_MONEY_ASKED_TO_ACCEPT_TRANSFER_DEBTOR_URI);
+        }
     }
 
     @Override
     public void sendBond(SharkBond bond, CharSequence sender, Set<CharSequence> receiver, boolean sign, boolean encrypt, CharSequence uri) throws IOException, ASAPException, SharkCreditMoneyException {
         byte[] serializedBond = SharkBondSerializer.serializeCreditBond(bond, sender, receiver, sign, encrypt, this.certificateComponent, false);
-        this.asapPeer.sendASAPMessage(SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_FORMAT, uri, serializedBond);
         this.sharkBondStorage.addOrUpdateSharkBond(bond);
+        this.asapPeer.sendASAPMessage(SharkCreditMoneyComponent.SHARK_CREDIT_MONEY_FORMAT, uri, serializedBond);
     }
 
     @Override

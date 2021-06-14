@@ -5,9 +5,7 @@ import net.sharksystem.asap.ASAPSecurityException;
 import net.sharksystem.asap.crypto.ASAPCryptoAlgorithms;
 import net.sharksystem.asap.crypto.ASAPKeyStore;
 import net.sharksystem.asap.utils.ASAPSerialization;
-
 import java.io.*;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -122,7 +120,7 @@ class SharkBondSerializer {
 
             // for me?
             if (!asapKeyStore.isOwner(encryptedMessagePackage.getRecipient())) {
-                throw new ASAPException("SharkBond Message: message not for me");
+                throw new ASAPException("SharkBond Message: message not for me. Current user: " + asapKeyStore.getOwner() + ", recipient: " + encryptedMessagePackage.getRecipient());
             }
             // replace message with decrypted message
             tmpMessage = ASAPCryptoAlgorithms.decryptPackage(
@@ -167,79 +165,6 @@ class SharkBondSerializer {
 
         // replace special sn symbols
         return byteArrayToSharkBond(snMessage);
-    }
-
-    static byte[] deserializeCreditBond(byte[] serializedCreditBond, ASAPKeyStore asapKeyStore, int usedFor) throws IOException, ASAPException {
-        ByteArrayInputStream bais = new ByteArrayInputStream(serializedCreditBond);
-        byte flags = ASAPSerialization.readByte(bais);
-        byte[] tmpMessage = ASAPSerialization.readByteArray(bais);
-
-        boolean signed = (flags & SharkBond.SIGNED_MASK) != 0;
-        boolean encrypted = (flags & SharkBond.ENCRYPTED_MASK) != 0;
-
-        if (encrypted) {
-            // decrypt
-            bais = new ByteArrayInputStream(tmpMessage);
-            ASAPCryptoAlgorithms.EncryptedMessagePackage
-                    encryptedMessagePackage = ASAPCryptoAlgorithms.parseEncryptedMessagePackage(bais);
-
-            // for me?
-            if (!asapKeyStore.isOwner(encryptedMessagePackage.getRecipient())) {
-                throw new ASAPException("SharkBond Message: message not for me");
-            }
-            // replace message with decrypted message
-            tmpMessage = ASAPCryptoAlgorithms.decryptPackage(
-                    encryptedMessagePackage, asapKeyStore);
-        }
-
-        byte[] signature = null;
-        byte[] signedMessage = null;
-        if (signed) {
-            // split message from signature
-            bais = new ByteArrayInputStream(tmpMessage);
-            tmpMessage = ASAPSerialization.readByteArray(bais);
-            signedMessage = tmpMessage;
-            signature = ASAPSerialization.readByteArray(bais);
-
-            // usedFor == 1 function is used for signature purpose
-            if (usedFor == 1) {
-                return signature;
-            }
-
-            // usedFor == 2 function is used for verification purpose
-            if (usedFor == 2) {
-                return signedMessage;
-            }
-        }
-
-        ///////////////// produce object form serialized bytes
-        bais = new ByteArrayInputStream(tmpMessage);
-
-        ////// content
-        byte[] snMessage = ASAPSerialization.readByteArray(bais);
-        ////// sender
-        String snSender = ASAPSerialization.readCharSequenceParameter(bais);
-        ////// recipients
-        Set<CharSequence> snReceivers = ASAPSerialization.readCharSequenceSetParameter(bais);
-        ///// timestamp
-        // String timestampString = ASAPSerialization.readCharSequenceParameter(bais);
-        // Timestamp creationTime = Timestamp.valueOf(timestampString);
-
-        boolean verified = false; // initialize
-        if (signature != null) {
-            try {
-                verified = ASAPCryptoAlgorithms.verify(
-                        signedMessage, signature, snSender, asapKeyStore);
-            } catch (ASAPSecurityException e) {
-                // verified definitely false
-                verified = false;
-            }
-        }
-
-        System.out.println("Verified: " + verified);
-
-        // replace special sn symbols
-        return snMessage;
     }
 
     static byte [] sharkBondToByteArray(String creditBond) {
