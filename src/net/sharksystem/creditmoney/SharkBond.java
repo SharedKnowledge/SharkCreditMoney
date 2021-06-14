@@ -38,11 +38,22 @@ public interface SharkBond {
      */
     CharSequence getCreditorID();
 
+    CharSequence getTempDebtorID();
+
+    CharSequence getTempCreditorID();
+
     byte[] getDebtorSignature();
     byte[] getCreditorSignature();
 
+    boolean getBondIsAnnulledByCreditor();
+    boolean getBondIsAnnulledByDebtor();
+
     void setDebtorID(CharSequence debtorID) throws SharkCreditMoneyException;
     void setCreditorID(CharSequence creditorID) throws SharkCreditMoneyException;
+
+    void setTempDebtorID(CharSequence debtorID);
+
+    void setTempCreditorID(CharSequence creditorID);
 
     boolean allowedToChangeDebtor();
     boolean allowedToChangeCreditor();
@@ -52,6 +63,11 @@ public interface SharkBond {
 
     void setCreditorSignature(byte[] signature);
     void setDebtorSignature(byte[] signature);
+
+    void setBondIsAnnulledByCreditor();
+    void setBondIsAnnulledByDebtor();
+
+    void resetBondState();
 
     /**
      *
@@ -66,6 +82,7 @@ public interface SharkBond {
      */
     CharSequence unitDescription();
     boolean isAnnulled();
+    boolean bondIsExpired();
 
     void extendCreditBondValidity();
     void setBondAsExpired();

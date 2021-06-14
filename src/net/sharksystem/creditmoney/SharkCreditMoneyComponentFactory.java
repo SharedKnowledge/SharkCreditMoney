@@ -20,6 +20,6 @@ public class SharkCreditMoneyComponentFactory implements SharkComponentFactory {
 
     @Override
     public SharkComponent getComponent() {
-        return new SharkMoneyComponentImpl(pkiComponent);
+        return new SharkCreditMoneyComponentImpl(pkiComponent);
     }
 }

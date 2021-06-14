@@ -1,7 +1,5 @@
 package net.sharksystem.creditmoney;
 
-import net.sharksystem.asap.persons.Person;
-import net.sharksystem.asap.utils.ASAPSerialization;
 import java.io.*;
 import java.util.Calendar;
 import java.util.UUID;
@@ -19,18 +17,16 @@ public class InMemoSharkBond implements SharkBond, Serializable {
     private long expirationDate;
     private CharSequence bondID;
     private CharSequence debtorID, creditorID;
+    private CharSequence tempDebtorID, tempCreditorID;
     private byte[] debtorSignature, creditorSignature;
+    private boolean bondIsAnnulledByCreditor, bondIsAnnulledByDebtor;
 
     public InMemoSharkBond(SharkBond bond) {
-        this(bond.getCreditorID(), bond.getDebtorID(), bond.unitDescription(), bond.getAmount(), bond.allowedToChangeCreditor(), bond.allowedToChangeDebtor());
-    }
-
-    public InMemoSharkBond(CharSequence unitDescription, int amount) {
-        this(null, null, unitDescription, amount, false);
-    }
-
-    public InMemoSharkBond(CharSequence creditorID, CharSequence debtorID, CharSequence unitDescription, int amount) {
-        this(creditorID, debtorID, unitDescription, amount,false);
+        this(bond.getBondID(), bond.getCreditorID(), bond.getDebtorID(),
+                bond.unitDescription(), bond.getAmount(), bond.getExpirationDate(),
+                bond.getDebtorSignature(), bond.getCreditorSignature(), bond.allowedToChangeCreditor(),
+                bond.allowedToChangeDebtor(), bond.getBondIsAnnulledByCreditor(), bond.getBondIsAnnulledByDebtor(),
+                bond.getTempCreditorID(), bond.getTempDebtorID());
     }
 
     public InMemoSharkBond(CharSequence creditorID, CharSequence debtorID, CharSequence unitDescription, int amount, boolean allowTransfer) {
@@ -38,16 +34,28 @@ public class InMemoSharkBond implements SharkBond, Serializable {
     }
 
     public InMemoSharkBond(CharSequence creditorID, CharSequence debtorID, CharSequence unitDescription, int amount, boolean allowedToChangeCreditor, boolean allowedToChangeDebtor) {
-        this.bondID = generateBondID();
+        this(generateBondID(), creditorID, debtorID, unitDescription, amount, getDefaultExpirationDate(), null, null, allowedToChangeCreditor, allowedToChangeDebtor, false, false, null, null);
+    }
+
+    public InMemoSharkBond(CharSequence bondID, CharSequence creditorID, CharSequence debtorID,
+                           CharSequence unitDescription, int amount, long expirationDate,
+                           byte[] debtorSignature, byte[] creditorSignature, boolean allowedToChangeCreditor,
+                           boolean allowedToChangeDebtor, boolean bondIsAnnulledByCreditor, boolean bondIsAnnulledByDebtor,
+                           CharSequence tempCreditorID, CharSequence tempDebtorID) {
+        this.bondID = bondID;
         this.creditorID = creditorID;
         this.debtorID = debtorID;
         this.unitDescription = unitDescription;
         this.amount = amount;
-        this.setExpirationDate();
-        this.debtorSignature = null;
-        this.creditorSignature = null;
+        this.expirationDate = expirationDate;
+        this.debtorSignature = debtorSignature;
+        this.creditorSignature = creditorSignature;
         this.allowedToChangeCreditor = allowedToChangeCreditor;
         this.allowedToChangeDebtor = allowedToChangeDebtor;
+        this.bondIsAnnulledByCreditor = bondIsAnnulledByCreditor;
+        this.bondIsAnnulledByDebtor = bondIsAnnulledByDebtor;
+        this.tempCreditorID = tempCreditorID;
+        this.tempDebtorID = tempDebtorID;
     }
 
     @Override
@@ -100,8 +108,28 @@ public class InMemoSharkBond implements SharkBond, Serializable {
     }
 
     @Override
+    public CharSequence getTempDebtorID() {
+        return this.tempDebtorID;
+    }
+
+    @Override
+    public CharSequence getTempCreditorID() {
+        return this.tempCreditorID;
+    }
+
+    @Override
     public byte[] getCreditorSignature() {
         return this.creditorSignature;
+    }
+
+    @Override
+    public boolean getBondIsAnnulledByCreditor() {
+        return this.bondIsAnnulledByCreditor;
+    }
+
+    @Override
+    public boolean getBondIsAnnulledByDebtor() {
+        return this.bondIsAnnulledByDebtor;
     }
 
     @Override
@@ -128,6 +156,16 @@ public class InMemoSharkBond implements SharkBond, Serializable {
     }
 
     @Override
+    public void setTempDebtorID(CharSequence debtorID) {
+        this.tempDebtorID = debtorID;
+    }
+
+    @Override
+    public void setTempCreditorID(CharSequence creditorID) {
+        this.tempCreditorID = creditorID;
+    }
+
+    @Override
     public void setCreditorSignature(byte[] signature) {
         this.creditorSignature = signature;
     }
@@ -135,6 +173,26 @@ public class InMemoSharkBond implements SharkBond, Serializable {
     @Override
     public void setDebtorSignature(byte[] signature) {
         this.debtorSignature = signature;
+    }
+
+    @Override
+    public void setBondIsAnnulledByCreditor() {
+        this.bondIsAnnulledByCreditor = true;
+    }
+
+    @Override
+    public void setBondIsAnnulledByDebtor() {
+        this.bondIsAnnulledByDebtor = true;
+    }
+
+    @Override
+    public void resetBondState() {
+        this.bondIsAnnulledByCreditor = false;
+        this.bondIsAnnulledByDebtor = false;
+        this.allowedToChangeCreditor = false;
+        this.allowedToChangeDebtor = false;
+        this.tempCreditorID = null;
+        this.tempDebtorID = null;
     }
 
     /**
@@ -163,7 +221,13 @@ public class InMemoSharkBond implements SharkBond, Serializable {
 
     @Override
     public boolean isAnnulled() {
-        return false;
+        return this.bondIsAnnulledByCreditor && this.bondIsAnnulledByDebtor;
+    }
+
+    @Override
+    public boolean bondIsExpired() {
+        Calendar until = Calendar.getInstance();
+        return this.expirationDate <= until.getTimeInMillis();
     }
 
     @Override
@@ -174,14 +238,15 @@ public class InMemoSharkBond implements SharkBond, Serializable {
 
     @Override
     public String toString() {
-        return "CreditBond{" +
-                "creditorID=" + creditorID +
-                ", debtorID=" + debtorID +
-                ", unitDescription=" + unitDescription +
-                ", amount=" + amount +
-                ", expirationDate=" + expirationDate +
-                ", creditorSignature=" + creditorSignature +
-                ", debtorSignature=" + debtorSignature +
+        return "{" +
+                ", \"bondID\"=\"" + bondID + "\""+
+                ", \"creditorID\"=\"" + creditorID + "\""+
+                ", \"debtorID\"=\"" + debtorID + "\""+
+                ", \"unitDescription\"=\"" + unitDescription + "\""+
+                ", \"amount\"=" + amount +
+                ",\"expirationDate\"=" + expirationDate +
+                ", \"allowedToChangeDebtor\"=" + allowedToChangeDebtor +
+                ", \"allowedToChangeCreditor\"=" + allowedToChangeCreditor +
                 '}';
     }
 
@@ -191,16 +256,16 @@ public class InMemoSharkBond implements SharkBond, Serializable {
         this.expirationDate = until.getTimeInMillis();
     }
 
-    private void setExpirationDate() {
-        Calendar until = Calendar.getInstance();
-        this.setExpirationDate(until.getTimeInMillis());
-    }
-
     private void setExpirationDate(long creationDate) {
         Calendar until = Calendar.getInstance();
         until.setTimeInMillis(creationDate);
         until.add(Calendar.YEAR, DEFAULT_CREDIT_BOND_VALIDITY_IN_YEARS);
         this.expirationDate = until.getTimeInMillis();
+    }
+
+    private static long getDefaultExpirationDate() {
+        Calendar until = Calendar.getInstance();
+        return until.getTimeInMillis();
     }
 
     private static CharSequence generateBondID() {

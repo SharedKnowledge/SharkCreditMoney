@@ -3,10 +3,8 @@ package net.sharksystem.creditmoney;
 import net.sharksystem.asap.ASAPSecurityException;
 import net.sharksystem.asap.crypto.ASAPCryptoAlgorithms;
 import net.sharksystem.asap.crypto.ASAPKeyStore;
-import net.sharksystem.asap.pki.ASAPKeyStorage;
 
 import java.io.IOException;
-import java.util.Calendar;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -47,16 +45,18 @@ class SharkBondHelper {
      * @throws SharkCreditMoneyException
      */
     static void acceptTransferCreditor(ASAPKeyStore asapKeyStore, SharkBond bond) throws SharkCreditMoneyException, ASAPSecurityException, IOException {
-        // Test: if the current peer is the creditor of the bond
-        if (!asapKeyStore.getOwner().equals(bond.getCreditorID())) {
-            throw new SharkCreditMoneyException("The provided keyStore owner (" + asapKeyStore.getOwner() + ") doesn't match the creditor's id (" + bond.getCreditorID() + ")");
-        } else if (!isSignedAsCreditor(bond, asapKeyStore)){
-            throw new SharkCreditMoneyException("The provided SharkBond doesn't contain a correct signature. The request will be rejected.");
+        // Test: if the current peer is the debtor of the bond
+        if (!asapKeyStore.getOwner().equals(bond.getDebtorID())) {
+            throw new SharkCreditMoneyException("The provided keyStore owner (" + asapKeyStore.getOwner() + ") doesn't match the debtor's id (" + bond.getDebtorID() + ")");
+        } else if (!isSignedAsDebtor(bond, asapKeyStore)){
+            throw new SharkCreditMoneyException("The provided SharkBond doesn't contain a correct debtor signature. The request will be rejected.");
+        } else if (!isSignedAsCreditor(bond, asapKeyStore)) {
+            throw new SharkCreditMoneyException("The provided SharkBond doesn't contain a correct creditor signature. The request will be rejected.");
         } else {
             // Set allowedToChangeCreditor to true
             bond.setAllowedToChangeCreditor(true);
             // then sign the bond again
-            signAsCreditor(asapKeyStore, bond);
+            signAsDebtor(asapKeyStore, bond);
         }
     }
 
@@ -65,9 +65,22 @@ class SharkBondHelper {
      * @param bond
      * @throws SharkCreditMoneyException
      */
-    static void acceptedTransferCreditor(ASAPKeyStore ASAPKeyStore, SharkBond bond) throws SharkCreditMoneyException {
-        // Once the request to transfer a bond to a new creditor is accepted the new creditor will be recorded and the bond will be signed
-        
+    static void acceptedTransferCreditor(ASAPKeyStore asapKeyStore, SharkBond bond) throws SharkCreditMoneyException, IOException, ASAPSecurityException {
+        // First make sure that the bond transfer is allowed and the verify the debtor signature
+        if (!bond.allowedToChangeCreditor()) {
+            throw new SharkCreditMoneyException("The transfer of the shark bond wasn't allowed by the current debtor.");
+        } else if (!isSignedAsDebtor(bond, asapKeyStore)) {
+            throw new SharkCreditMoneyException("The provided SharkBond doesn't contain a correct debtor signature. The request will be rejected.");
+        } else {
+            // Save old creditor
+            CharSequence oldCreditor = bond.getCreditorID();
+            // Once the request to transfer a bond to a new creditor is accepted the new creditor will be recorded and the bond will be signed
+            bond.setCreditorID(bond.getTempCreditorID());
+            // Save old debtor as TempDebtor
+            bond.setTempCreditorID(oldCreditor);
+            // Sign the new bond as old creditor
+            signAsCreditor(asapKeyStore, bond);
+        }
     }
 
     /**
@@ -76,11 +89,13 @@ class SharkBondHelper {
      * @throws SharkCreditMoneyException
      */
     static void acceptTransferDebtor(ASAPKeyStore asapKeyStore, SharkBond bond) throws SharkCreditMoneyException, ASAPSecurityException, IOException {
-        // Test: if the current peer is the debtor of the bond
-        if (!asapKeyStore.getOwner().equals(bond.getDebtorID())) {
+        // Test: if the current peer is the creditor of the bond
+        if (!asapKeyStore.getOwner().equals(bond.getCreditorID())) {
             throw new SharkCreditMoneyException("The provided keyStore owner (" + asapKeyStore.getOwner() + ") doesn't match the debtor's id (" + bond.getDebtorID() + ")");
-        } else if (!isSignedAsDebtor(bond, asapKeyStore)){
-            throw new SharkCreditMoneyException("The provided SharkBond doesn't contain a correct signature. The request will be rejected.");
+        } else if (!isSignedAsCreditor(bond, asapKeyStore)) {
+            throw new SharkCreditMoneyException("The provided SharkBond doesn't contain a correct creditor signature. The request will be rejected.");
+        } else if (!isSignedAsDebtor(bond, asapKeyStore)) {
+            throw new SharkCreditMoneyException("The provided SharkBond doesn't contain a correct debtor signature. The request will be rejected.");
         } else {
             // Set allowedToChangeDebtor to true
             bond.setAllowedToChangeDebtor(true);
@@ -94,7 +109,22 @@ class SharkBondHelper {
      * @param bond
      * @throws SharkCreditMoneyException
      */
-    static void acceptedTransferDebtor(ASAPKeyStore ASAPKeyStore, SharkBond bond) throws SharkCreditMoneyException {
+    static void acceptedTransferDebtor(ASAPKeyStore asapKeyStore, SharkBond bond) throws SharkCreditMoneyException, IOException, ASAPSecurityException {
+        // First make sure that the bond transfer is allowed and the verify the debtor signature
+        if (!bond.allowedToChangeDebtor()) {
+            throw new SharkCreditMoneyException("The transfer of the shark bond wasn't allowed by the current debtor.");
+        } else if (!isSignedAsCreditor(bond, asapKeyStore)) {
+            throw new SharkCreditMoneyException("The provided SharkBond doesn't contain a correct creditor signature. The request will be rejected.");
+        } else {
+            // Save old debtor
+            CharSequence oldDebtor = bond.getDebtorID();
+            // Once the request to transfer a bond to a new debtor is accepted the new debtor will be recorded and the bond will be signed
+            bond.setDebtorID(bond.getTempDebtorID());
+            // Save old debtor as TempDebtor
+            bond.setTempDebtorID(oldDebtor);
+            // Sign the new bond as old debtor
+            signAsDebtor(asapKeyStore, bond);
+        }
     }
 
     /**
@@ -103,15 +133,16 @@ class SharkBondHelper {
      * @param bond
      * @throws SharkCreditMoneyException
      */
-    static void signTransferBondAsDebtor(SharkBond bond) throws SharkCreditMoneyException {
-    }
-
-    /**
-     * transfer bond signed. do we need this method?
-     * @param bond
-     * @throws SharkCreditMoneyException
-     */
-    static void signedTransferBondAsDebtor(SharkBond bond) throws SharkCreditMoneyException {
+    static void signTransferBondAsDebtor(ASAPKeyStore asapKeyStore, SharkBond bond) throws SharkCreditMoneyException, IOException, ASAPSecurityException {
+        // Test: if the current peer is the debtor of the bond
+        if (!asapKeyStore.getOwner().equals(bond.getDebtorID())) {
+            throw new SharkCreditMoneyException("The provided keyStore owner (" + asapKeyStore.getOwner() + ") doesn't match the debtor's id (" + bond.getDebtorID() + ")");
+        } else if (!isSignedAsDebtor(bond, (String) bond.getTempDebtorID(), asapKeyStore)) {
+            // Test: if the old debtor signature is correct
+            throw new SharkCreditMoneyException("The provided SharkBond doesn't contain a correct signature of the old debtor. The request will be rejected.");
+        } else {
+            bond.setDebtorSignature(signBond(asapKeyStore, bond));
+        }
     }
 
     /**
@@ -120,44 +151,70 @@ class SharkBondHelper {
      * @param bond
      * @throws SharkCreditMoneyException
      */
-    static void signTransferBondAsCreditor(SharkBond bond) throws SharkCreditMoneyException {
+    static void signTransferBondAsCreditor(ASAPKeyStore asapKeyStore, SharkBond bond) throws SharkCreditMoneyException, IOException, ASAPSecurityException {
+        // Test: if the current peer is the creditor of the bond
+        if (!asapKeyStore.getOwner().equals(bond.getCreditorID())) {
+            throw new SharkCreditMoneyException("The provided keyStore owner (" + asapKeyStore.getOwner() + ") doesn't match the creditor's id (" + bond.getCreditorID() + ")");
+        } else if (!isSignedAsCreditor(bond, (String) bond.getTempCreditorID(), asapKeyStore)) {
+            // Test: if the old creditor signature is correct
+            throw new SharkCreditMoneyException("The provided SharkBond doesn't contain a correct signature of the old creditor. The request will be rejected.");
+        } else {
+            bond.setCreditorSignature(signBond(asapKeyStore, bond));
+        }
     }
 
-    /**
-     * In video: Bob received a signed transfer bond from Alice
-      * @param bond
-     * @throws SharkCreditMoneyException
-     */
-    static void signedTransferBondAsCreditor(SharkBond bond) throws SharkCreditMoneyException {
+    static void annulBond(ASAPKeyStore asapKeyStore, SharkBond bond) throws SharkCreditMoneyException, IOException, ASAPSecurityException {
+        // Test: if the current peer is the creditor of the bond
+        if (!asapKeyStore.getOwner().equals(bond.getCreditorID()) && !asapKeyStore.getOwner().equals(bond.getDebtorID())) {
+            throw new SharkCreditMoneyException("The provided keyStore owner (" + asapKeyStore.getOwner() + ") doesn't match the creditor/debtor's id (" + bond.getCreditorID() + "/" + bond.getDebtorID() + ")");
+        } else if (bond.isAnnulled()) {
+            throw new SharkCreditMoneyException("The provided bond was already annulled. The request will be rejected");
+        } else {
+            bond.setBondAsExpired();
+            // Sign the bond
+            if (asapKeyStore.getOwner().equals(bond.getCreditorID())) {
+                bond.setBondIsAnnulledByCreditor();
+                bond.setCreditorSignature(signBond(asapKeyStore, bond));
+            } else if (asapKeyStore.getOwner().equals(bond.getDebtorID())) {
+                bond.setBondIsAnnulledByDebtor();
+                bond.setDebtorSignature(signBond(asapKeyStore, bond));
+            }
+        }
     }
 
-    static void finalizeTransferAsCreditor(SharkBond bond) throws SharkCreditMoneyException {
+    static boolean isSignedAsCreditor(SharkBond creditBond, ASAPKeyStore asapKeyStore) throws ASAPSecurityException, IOException {
+        String signer = (String) creditBond.getCreditorID();
+        return isSignedAsCreditor(creditBond, signer, asapKeyStore);
     }
 
-    static void finalizedTransferAsCreditor(SharkBond bond) throws SharkCreditMoneyException {
+    static boolean isSignedAsCreditor(SharkBond creditBond, String signer, ASAPKeyStore asapKeyStore) throws ASAPSecurityException, IOException {
+        Set<CharSequence> receiver = new HashSet<>();
+        receiver.add(creditBond.getDebtorID());
+        byte[] signature = creditBond.getCreditorSignature();
+        byte[] creditBondBytes = SharkBondSerializer.serializeCreditBond(creditBond, creditBond.getCreditorID(), receiver, true, true, asapKeyStore, true, 2);
+        return signature != null && isSignatureCorrect(creditBondBytes, signature, signer, asapKeyStore);
     }
 
-    static void annulBond(SharkBond bond) {
-        bond.setBondAsExpired();
+    static boolean isSignedAsDebtor(SharkBond creditBond, ASAPKeyStore asapKeyStore) throws ASAPSecurityException, IOException {
+        String signer = (String) creditBond.getDebtorID();
+        return isSignedAsDebtor(creditBond, signer, asapKeyStore);
     }
 
-    static boolean isSignedAsCreditor(SharkBond creditBond, ASAPKeyStore asapKeyStore) throws ASAPSecurityException {
-        return creditBond.getCreditorSignature() != null && isSignatureCorrect(SharkBondSerializer.sharkBondToByteArray(creditBond, true), creditBond.getCreditorSignature(), asapKeyStore);
+    static boolean isSignedAsDebtor(SharkBond creditBond, String signer, ASAPKeyStore asapKeyStore) throws ASAPSecurityException, IOException {
+        Set<CharSequence> receiver = new HashSet<>();
+        receiver.add(creditBond.getCreditorID());
+        byte[] signature = creditBond.getDebtorSignature();
+        byte[] creditBondBytes = SharkBondSerializer.serializeCreditBond(creditBond, creditBond.getDebtorID(), receiver, true, true, asapKeyStore, true, 2);
+        return signature != null && isSignatureCorrect(creditBondBytes, signature, signer, asapKeyStore);
     }
 
-    static boolean isSignedAsDebtor(SharkBond creditBond, ASAPKeyStore asapKeyStore) throws ASAPSecurityException {
-        return creditBond.getDebtorSignature() != null && isSignatureCorrect(SharkBondSerializer.sharkBondToByteArray(creditBond, true), creditBond.getDebtorSignature(), asapKeyStore);
-    }
-
-    static boolean isSignatureCorrect(byte[] creditBond, byte[] signature, ASAPKeyStore asapKeyStore) throws ASAPSecurityException {
-        return ASAPCryptoAlgorithms.verify(creditBond, signature, asapKeyStore.getOwner().toString(), asapKeyStore);
+    static boolean isSignatureCorrect(byte[] creditBond, byte[] signature, String signer, ASAPKeyStore asapKeyStore) throws ASAPSecurityException {
+        return ASAPCryptoAlgorithms.verify(creditBond, signature, signer, asapKeyStore);
     }
 
     private static byte[] signBond(ASAPKeyStore ASAPKeyStore, SharkBond Bond) throws ASAPSecurityException, IOException {
         Set<CharSequence> receiver = new HashSet<>();
         receiver.add(Bond.getDebtorID());
-        byte[] serializedBond = SharkBondSerializer.serializeCreditBond(Bond, Bond.getCreditorID(), receiver, true, true, ASAPKeyStore, true);
-
-        return ASAPCryptoAlgorithms.sign(serializedBond, ASAPKeyStore);
+        return SharkBondSerializer.serializeCreditBond(Bond, Bond.getCreditorID(), receiver, true, true, ASAPKeyStore, true, 1);
     }
 }

@@ -8,8 +8,11 @@ import net.sharksystem.asap.utils.ASAPSerialization;
 
 import java.io.*;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import org.json.*;
 
 class SharkBondSerializer {
 
@@ -19,6 +22,12 @@ class SharkBondSerializer {
 
     static byte [] serializeCreditBond(SharkBond creditBond, CharSequence sender, Set<CharSequence> receiver,
                                        boolean sign, boolean encrypt, ASAPKeyStore asapKeyStore, boolean excludeSignature) throws ASAPSecurityException, IOException {
+        return serializeCreditBond(creditBond, sender, receiver, sign, encrypt, asapKeyStore, excludeSignature, 0);
+    }
+
+
+    static byte [] serializeCreditBond(SharkBond creditBond, CharSequence sender, Set<CharSequence> receiver,
+                                       boolean sign, boolean encrypt, ASAPKeyStore asapKeyStore, boolean excludeSignature, int usedFor) throws ASAPSecurityException, IOException {
 
         if( (receiver != null && receiver.size() > 1) && encrypt) {
             throw new ASAPSecurityException("cannot (yet) encrypt one message for more than one recipient - split it into more messages");
@@ -48,10 +57,11 @@ class SharkBondSerializer {
         ASAPSerialization.writeCharSequenceParameter(sender, baos);
         ///// recipients
         ASAPSerialization.writeCharSequenceSetParameter(receiver, baos);
+
         ///// timestamp
-        Timestamp creationTime = new Timestamp(System.currentTimeMillis());
-        String timestampString = creationTime.toString();
-        ASAPSerialization.writeCharSequenceParameter(timestampString, baos);
+        // Timestamp creationTime = new Timestamp(System.currentTimeMillis());
+        // String timestampString = creationTime.toString();
+        // ASAPSerialization.writeCharSequenceParameter(timestampString, baos);
 
         content = baos.toByteArray();
 
@@ -59,8 +69,19 @@ class SharkBondSerializer {
         // Sign SC Bond Message
         if(sign) {
             byte[] signature = ASAPCryptoAlgorithms.sign(content, asapKeyStore);
+            // usedFor == 1 function is used for signature purpose
+            if (usedFor == 1) {
+                return signature;
+            }
+
             baos = new ByteArrayOutputStream();
             ASAPSerialization.writeByteArray(content, baos); // message has three parts: content, sender, receiver
+
+            // usedFor == 2 function is used for verification purpose
+            if (usedFor == 2) {
+                return content;
+            }
+
             // append signature
             ASAPSerialization.writeByteArray(signature, baos);
             // attach signature to message
@@ -128,8 +149,8 @@ class SharkBondSerializer {
         ////// recipients
         Set<CharSequence> snReceivers = ASAPSerialization.readCharSequenceSetParameter(bais);
         ///// timestamp
-        String timestampString = ASAPSerialization.readCharSequenceParameter(bais);
-        Timestamp creationTime = Timestamp.valueOf(timestampString);
+        // String timestampString = ASAPSerialization.readCharSequenceParameter(bais);
+        // Timestamp creationTime = Timestamp.valueOf(timestampString);
 
         boolean verified = false; // initialize
         if (signature != null) {
@@ -142,27 +163,92 @@ class SharkBondSerializer {
             }
         }
 
+        System.out.println("Verified: " + verified);
+
         // replace special sn symbols
         return byteArrayToSharkBond(snMessage);
     }
 
-    static byte [] sharkBondToByteArray(SharkBond creditBond) {
-        byte[] byteArray = null;
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream out = null;
-        try {
-            out = new ObjectOutputStream(bos);
-            out.writeObject(creditBond);
-            out.flush();
-            byteArray = bos.toByteArray();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                bos.close();
-            } catch (IOException ex) {
-                // ignore close exception
+    static byte[] deserializeCreditBond(byte[] serializedCreditBond, ASAPKeyStore asapKeyStore, int usedFor) throws IOException, ASAPException {
+        ByteArrayInputStream bais = new ByteArrayInputStream(serializedCreditBond);
+        byte flags = ASAPSerialization.readByte(bais);
+        byte[] tmpMessage = ASAPSerialization.readByteArray(bais);
+
+        boolean signed = (flags & SharkBond.SIGNED_MASK) != 0;
+        boolean encrypted = (flags & SharkBond.ENCRYPTED_MASK) != 0;
+
+        if (encrypted) {
+            // decrypt
+            bais = new ByteArrayInputStream(tmpMessage);
+            ASAPCryptoAlgorithms.EncryptedMessagePackage
+                    encryptedMessagePackage = ASAPCryptoAlgorithms.parseEncryptedMessagePackage(bais);
+
+            // for me?
+            if (!asapKeyStore.isOwner(encryptedMessagePackage.getRecipient())) {
+                throw new ASAPException("SharkBond Message: message not for me");
             }
+            // replace message with decrypted message
+            tmpMessage = ASAPCryptoAlgorithms.decryptPackage(
+                    encryptedMessagePackage, asapKeyStore);
+        }
+
+        byte[] signature = null;
+        byte[] signedMessage = null;
+        if (signed) {
+            // split message from signature
+            bais = new ByteArrayInputStream(tmpMessage);
+            tmpMessage = ASAPSerialization.readByteArray(bais);
+            signedMessage = tmpMessage;
+            signature = ASAPSerialization.readByteArray(bais);
+
+            // usedFor == 1 function is used for signature purpose
+            if (usedFor == 1) {
+                return signature;
+            }
+
+            // usedFor == 2 function is used for verification purpose
+            if (usedFor == 2) {
+                return signedMessage;
+            }
+        }
+
+        ///////////////// produce object form serialized bytes
+        bais = new ByteArrayInputStream(tmpMessage);
+
+        ////// content
+        byte[] snMessage = ASAPSerialization.readByteArray(bais);
+        ////// sender
+        String snSender = ASAPSerialization.readCharSequenceParameter(bais);
+        ////// recipients
+        Set<CharSequence> snReceivers = ASAPSerialization.readCharSequenceSetParameter(bais);
+        ///// timestamp
+        // String timestampString = ASAPSerialization.readCharSequenceParameter(bais);
+        // Timestamp creationTime = Timestamp.valueOf(timestampString);
+
+        boolean verified = false; // initialize
+        if (signature != null) {
+            try {
+                verified = ASAPCryptoAlgorithms.verify(
+                        signedMessage, signature, snSender, asapKeyStore);
+            } catch (ASAPSecurityException e) {
+                // verified definitely false
+                verified = false;
+            }
+        }
+
+        System.out.println("Verified: " + verified);
+
+        // replace special sn symbols
+        return snMessage;
+    }
+
+    static byte [] sharkBondToByteArray(String creditBond) {
+        byte[] byteArray = null;
+
+        try {
+            byteArray = creditBond.getBytes();
+        } catch (NullPointerException e) {
+            e.printStackTrace();
         }
 
         return byteArray;
@@ -175,32 +261,89 @@ class SharkBondSerializer {
             SharkBond creditBondCopy = new InMemoSharkBond(creditBond);
             creditBondCopy.setCreditorSignature(null);
             creditBondCopy.setDebtorSignature(null);
-            return sharkBondToByteArray(creditBondCopy);
+            return sharkBondToByteArray(objectToJsonString(creditBondCopy));
         }
 
-        return sharkBondToByteArray(creditBond);
+        return sharkBondToByteArray(objectToJsonString(creditBond));
     }
 
     static SharkBond byteArrayToSharkBond(byte [] byteArray) {
         SharkBond bond = null;
-        ByteArrayInputStream bis = new ByteArrayInputStream(byteArray);
-        ObjectInput in = null;
+        String bondString;
         try {
-            in = new ObjectInputStream(bis);
-            bond = (SharkBond) in.readObject();
-        } catch (IOException | ClassNotFoundException e) {
+            bondString = new String(byteArray);
+            bond = jsonStringToSharkBond(bondString);
+        } catch (NullPointerException e) {
             e.printStackTrace();
-        } finally {
-            try {
-                if (in != null) {
-                    in.close();
-                }
-            } catch (IOException ex) {
-                // ignore close exception
-            }
         }
 
         return bond;
     }
 
+    static String objectToJsonString(SharkBond creditBond) {
+        List<String> debtorSignature = new ArrayList<>();
+        List<String> creditorSignature = new ArrayList<>();
+        if (creditBond.getDebtorSignature() != null) {
+            for (byte debtorSignatureByte: creditBond.getDebtorSignature()) {
+                debtorSignature.add("" + debtorSignatureByte);
+            }
+        }
+
+        if (creditBond.getCreditorSignature() != null) {
+            for (byte creditorSignatureByte: creditBond.getCreditorSignature()) {
+                creditorSignature.add("" + creditorSignatureByte);
+            }
+        }
+
+        JSONArray debtorJsonArray = new JSONArray(debtorSignature);
+        JSONArray creditorJsonArray = new JSONArray(creditorSignature);
+
+        return "{" +
+                "\"bondID\":\"" + creditBond.getBondID() + "\""+
+                ", \"creditorID\":\"" + creditBond.getCreditorID() + "\""+
+                ", \"debtorID\":\"" + creditBond.getDebtorID() + "\""+
+                ", \"unitDescription\":\"" + creditBond.unitDescription() + "\""+
+                ", \"amount\":" + creditBond.getAmount() +
+                ",\"expirationDate\":" + creditBond.getExpirationDate() +
+                ", \"debtorSignature\":" + debtorJsonArray.toString() +
+                ", \"creditorSignature\":" + creditorJsonArray.toString() +
+                ", \"allowedToChangeDebtor\":" + creditBond.allowedToChangeDebtor() +
+                ", \"allowedToChangeCreditor\":" + creditBond.allowedToChangeCreditor() +
+                ", \"bondIsAnnulledByCreditor\":" + creditBond.getBondIsAnnulledByCreditor() +
+                ", \"bondIsAnnulledByCreditor\":" + creditBond.getBondIsAnnulledByDebtor() +
+                ", \"tempCreditorID\":\"" + creditBond.getTempCreditorID() + "\""+
+                ", \"tempDebtorID\":\"" + creditBond.getTempDebtorID() + "\""+
+                '}';
+    }
+
+    static SharkBond jsonStringToSharkBond(String jsonString) {
+        JSONObject jsonObject = new JSONObject(jsonString);
+        JSONArray jArrayDebtorSignature = jsonObject.getJSONArray("debtorSignature");
+        byte[] debtorSignature = new byte[jArrayDebtorSignature.length()];
+
+        for (int i=0;i<jArrayDebtorSignature.length();i++){
+            debtorSignature[i] = (byte) jArrayDebtorSignature.getInt(i);
+        }
+        JSONArray jArrayCreditorSignature = jsonObject.getJSONArray("creditorSignature");
+        byte[] creditorSignature = new byte[jArrayCreditorSignature.length()];
+        for (int i=0;i<jArrayCreditorSignature.length();i++){
+            creditorSignature[i] = Byte.parseByte(jArrayCreditorSignature.getString(i));
+        }
+        return new InMemoSharkBond(
+                jsonObject.getString("bondID"),
+                jsonObject.getString("creditorID"),
+                jsonObject.getString("debtorID"),
+                jsonObject.getString("unitDescription"),
+                jsonObject.getInt("amount"),
+                jsonObject.getLong("expirationDate"),
+                debtorSignature.length == 0 ? null : debtorSignature,
+                creditorSignature.length == 0 ? null : creditorSignature,
+                jsonObject.getBoolean("allowedToChangeCreditor"),
+                jsonObject.getBoolean("allowedToChangeDebtor"),
+                jsonObject.getBoolean("bondIsAnnulledByCreditor"),
+                jsonObject.getBoolean("bondIsAnnulledByCreditor"),
+                jsonObject.getString("tempCreditorID"),
+                jsonObject.getString("tempDebtorID")
+        );
+    }
 }
