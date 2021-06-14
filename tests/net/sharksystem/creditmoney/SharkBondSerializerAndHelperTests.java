@@ -83,6 +83,31 @@ public class SharkBondSerializerAndHelperTests {
     }
 
     @Test
+    public void testAnnulBond() throws ASAPException, SharkException, IOException {
+        this.setUpSharkBondFunctionalitiesScenario();
+        SharkBond sharkBond = new InMemoSharkBond(ALICE_ID, BOB_ID, BOND_UNIT, BOND_AMOUNT, false);
+        Set<CharSequence> receiver = new HashSet<>();
+        receiver.add(sharkBond.getDebtorID());
+
+        // Check the bond is not yet annulled
+        Assert.assertFalse(sharkBond.isAnnulled());
+
+        // Annul bond as creditor
+        SharkBondHelper.annulBond(alicePKI, sharkBond);
+
+        // The bond was annulled by creditor, but is still not completely annulled
+        Assert.assertTrue(sharkBond.getBondIsAnnulledByCreditor());
+        Assert.assertFalse(sharkBond.isAnnulled());
+
+        // Now let us annul the bond as debtor
+        SharkBondHelper.annulBond(bobPKI, sharkBond);
+
+        // Now the bond is fully annulled
+        Assert.assertTrue(sharkBond.getBondIsAnnulledByCreditor());
+        Assert.assertTrue(sharkBond.isAnnulled());
+    }
+
+    @Test
     public void serializationTestBondPlain() throws SharkException, IOException, ASAPException {
         this.setUpSharkBondFunctionalitiesScenario();
         SharkBond sharkBond = new InMemoSharkBond(ALICE_ID, BOB_ID, BOND_UNIT, BOND_AMOUNT, false);
