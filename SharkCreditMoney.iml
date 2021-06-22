@@ -62,6 +62,5 @@
       </library>
     </orderEntry>
     <orderEntry type="library" name="ASAPCertificate" level="project" />
-    <orderEntry type="library" name="org.json:json:20180130" level="application" />
   </component>
 </module>

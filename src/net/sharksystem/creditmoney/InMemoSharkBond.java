@@ -237,20 +237,6 @@ public class InMemoSharkBond implements SharkBond, Serializable {
     }
 
     @Override
-    public String toString() {
-        return "{" +
-                ", \"bondID\"=\"" + bondID + "\""+
-                ", \"creditorID\"=\"" + creditorID + "\""+
-                ", \"debtorID\"=\"" + debtorID + "\""+
-                ", \"unitDescription\"=\"" + unitDescription + "\""+
-                ", \"amount\"=" + amount +
-                ",\"expirationDate\"=" + expirationDate +
-                ", \"allowedToChangeDebtor\"=" + allowedToChangeDebtor +
-                ", \"allowedToChangeCreditor\"=" + allowedToChangeCreditor +
-                '}';
-    }
-
-    @Override
     public void setBondAsExpired() {
         Calendar until = Calendar.getInstance();
         this.expirationDate = until.getTimeInMillis();

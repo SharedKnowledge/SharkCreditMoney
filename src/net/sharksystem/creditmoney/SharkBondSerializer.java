@@ -6,17 +6,10 @@ import net.sharksystem.asap.crypto.ASAPCryptoAlgorithms;
 import net.sharksystem.asap.crypto.ASAPKeyStore;
 import net.sharksystem.asap.utils.ASAPSerialization;
 import java.io.*;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-import org.json.*;
 
 class SharkBondSerializer {
-
-    static byte [] serializeCreditBond(SharkBond creditBond, ASAPKeyStore asapKeyStore) throws IOException, ASAPSecurityException {
-        return serializeCreditBond(creditBond, null, null, true, true, asapKeyStore, true);
-    }
 
     static byte [] serializeCreditBond(SharkBond creditBond, CharSequence sender, Set<CharSequence> receiver,
                                        boolean sign, boolean encrypt, ASAPKeyStore asapKeyStore, boolean excludeSignature) throws ASAPSecurityException, IOException {
@@ -161,23 +154,32 @@ class SharkBondSerializer {
             }
         }
 
-        System.out.println("Verified: " + verified);
-
         // replace special sn symbols
         return byteArrayToSharkBond(snMessage);
     }
 
-    static byte [] sharkBondToByteArray(String creditBond) {
+    static byte [] sharkBondToByteArray(SharkBond creditBond) {
         byte[] byteArray = null;
-
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutputStream out = null;
         try {
-            byteArray = creditBond.getBytes();
-        } catch (NullPointerException e) {
+            out = new ObjectOutputStream(bos);
+            out.writeObject(creditBond);
+            out.flush();
+            byteArray = bos.toByteArray();
+        } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            try {
+                bos.close();
+            } catch (IOException ex) {
+                // ignore close exception
+            }
         }
 
         return byteArray;
     }
+
 
     static byte [] sharkBondToByteArray(SharkBond creditBond, boolean excludeSignature) {
 
@@ -186,89 +188,32 @@ class SharkBondSerializer {
             SharkBond creditBondCopy = new InMemoSharkBond(creditBond);
             creditBondCopy.setCreditorSignature(null);
             creditBondCopy.setDebtorSignature(null);
-            return sharkBondToByteArray(objectToJsonString(creditBondCopy));
+            return sharkBondToByteArray(creditBondCopy);
         }
 
-        return sharkBondToByteArray(objectToJsonString(creditBond));
+        return sharkBondToByteArray(creditBond);
     }
+
 
     static SharkBond byteArrayToSharkBond(byte [] byteArray) {
         SharkBond bond = null;
-        String bondString;
+        ByteArrayInputStream bis = new ByteArrayInputStream(byteArray);
+        ObjectInput in = null;
         try {
-            bondString = new String(byteArray);
-            bond = jsonStringToSharkBond(bondString);
-        } catch (NullPointerException e) {
+            in = new ObjectInputStream(bis);
+            bond = (SharkBond) in.readObject();
+        } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
+        } finally {
+            try {
+                if (in != null) {
+                    in.close();
+                }
+            } catch (IOException ex) {
+                // ignore close exception
+            }
         }
 
         return bond;
-    }
-
-    static String objectToJsonString(SharkBond creditBond) {
-        List<String> debtorSignature = new ArrayList<>();
-        List<String> creditorSignature = new ArrayList<>();
-        if (creditBond.getDebtorSignature() != null) {
-            for (byte debtorSignatureByte: creditBond.getDebtorSignature()) {
-                debtorSignature.add("" + debtorSignatureByte);
-            }
-        }
-
-        if (creditBond.getCreditorSignature() != null) {
-            for (byte creditorSignatureByte: creditBond.getCreditorSignature()) {
-                creditorSignature.add("" + creditorSignatureByte);
-            }
-        }
-
-        JSONArray debtorJsonArray = new JSONArray(debtorSignature);
-        JSONArray creditorJsonArray = new JSONArray(creditorSignature);
-
-        return "{" +
-                " \"bondID\":\"" + creditBond.getBondID() + "\""+
-                ", \"creditorID\":\"" + creditBond.getCreditorID() + "\""+
-                ", \"debtorID\":\"" + creditBond.getDebtorID() + "\""+
-                ", \"unitDescription\":\"" + creditBond.unitDescription() + "\""+
-                ", \"amount\":" + creditBond.getAmount() +
-                ", \"expirationDate\":" + creditBond.getExpirationDate() +
-                ", \"debtorSignature\":" + debtorJsonArray.toString() +
-                ", \"creditorSignature\":" + creditorJsonArray.toString() +
-                ", \"allowedToChangeCreditor\":" + creditBond.allowedToChangeCreditor() +
-                ", \"allowedToChangeDebtor\":" + creditBond.allowedToChangeDebtor() +
-                ", \"bondIsAnnulledByCreditor\":" + creditBond.getBondIsAnnulledByCreditor() +
-                ", \"bondIsAnnulledByDebtor\":" + creditBond.getBondIsAnnulledByDebtor() +
-                ", \"tempCreditorID\":\"" + creditBond.getTempCreditorID() + "\""+
-                ", \"tempDebtorID\":\"" + creditBond.getTempDebtorID() + "\""+
-                '}';
-    }
-
-    static SharkBond jsonStringToSharkBond(String jsonString) {
-        JSONObject jsonObject = new JSONObject(jsonString);
-        JSONArray jArrayDebtorSignature = jsonObject.getJSONArray("debtorSignature");
-        byte[] debtorSignature = new byte[jArrayDebtorSignature.length()];
-
-        for (int i=0;i<jArrayDebtorSignature.length();i++){
-            debtorSignature[i] = (byte) jArrayDebtorSignature.getInt(i);
-        }
-        JSONArray jArrayCreditorSignature = jsonObject.getJSONArray("creditorSignature");
-        byte[] creditorSignature = new byte[jArrayCreditorSignature.length()];
-        for (int i=0;i<jArrayCreditorSignature.length();i++){
-            creditorSignature[i] = Byte.parseByte(jArrayCreditorSignature.getString(i));
-        }
-        return new InMemoSharkBond(
-                jsonObject.getString("bondID"),
-                jsonObject.getString("creditorID"),
-                jsonObject.getString("debtorID"),
-                jsonObject.getString("unitDescription"),
-                jsonObject.getInt("amount"),
-                jsonObject.getLong("expirationDate"),
-                debtorSignature.length == 0 ? null : debtorSignature,
-                creditorSignature.length == 0 ? null : creditorSignature,
-                jsonObject.getBoolean("allowedToChangeCreditor"),
-                jsonObject.getBoolean("allowedToChangeDebtor"),
-                jsonObject.getBoolean("bondIsAnnulledByCreditor"),
-                jsonObject.getBoolean("bondIsAnnulledByDebtor"),
-                jsonObject.getString("tempCreditorID"),
-                jsonObject.getString("tempDebtorID")
-        );
     }
 }

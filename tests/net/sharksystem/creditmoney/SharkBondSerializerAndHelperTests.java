@@ -58,6 +58,30 @@ public class SharkBondSerializerAndHelperTests {
     }
 
     @Test
+    public void bondToByteArrayConversionTest() {
+        SharkBond sharkBond = new InMemoSharkBond(ALICE_ID, BOB_ID, BOND_UNIT, BOND_AMOUNT, false);
+
+        // Bond to byte array
+        byte[] byteArray1 = SharkBondSerializer.sharkBondToByteArray(sharkBond);
+        byte[] byteArray2 = SharkBondSerializer.sharkBondToByteArray(sharkBond);
+
+        Assert.assertArrayEquals(byteArray1, byteArray2);
+
+        // Byte array to bond
+        SharkBond convertedSharkBond1 = SharkBondSerializer.byteArrayToSharkBond(byteArray1);
+        SharkBond convertedSharkBond2 = SharkBondSerializer.byteArrayToSharkBond(byteArray2);
+
+        Assert.assertNotNull(convertedSharkBond1);
+        Assert.assertNotNull(convertedSharkBond2);
+        Assert.assertEquals(convertedSharkBond1.getBondID(), convertedSharkBond2.getBondID());
+        Assert.assertEquals(convertedSharkBond1.getAmount(), convertedSharkBond2.getAmount());
+        Assert.assertEquals(convertedSharkBond1.getCreditorID(), convertedSharkBond2.getCreditorID());
+        Assert.assertEquals(convertedSharkBond1.getDebtorID(), convertedSharkBond2.getDebtorID());
+        Assert.assertEquals(convertedSharkBond1.unitDescription(), convertedSharkBond2.unitDescription());
+        Assert.assertEquals(convertedSharkBond1.getExpirationDate(), convertedSharkBond2.getExpirationDate());
+    }
+
+    @Test
     public void bondTestUserSignaturesForCreditorAndDebtor() throws SharkException, IOException, ASAPSecurityException {
         this.setUpSharkBondFunctionalitiesScenario();
         SharkBond sharkBond = new InMemoSharkBond(ALICE_ID, BOB_ID, BOND_UNIT, BOND_AMOUNT, false);
